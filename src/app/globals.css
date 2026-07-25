@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --c-dark: #0B2545;
+    --c-mid: #1B4D8E;
+    --c-light: #EBF3FF;
+    --c-acc: #F5C842;
+  }
+
+  * { -webkit-tap-highlight-color: transparent; }
+
+  body {
+    @apply bg-gray-100 overflow-x-hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app-shell {
+    @apply max-w-app mx-auto min-h-dvh bg-gray-100 relative overflow-x-hidden;
+  }
+
+  /* scrollbar hide */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+
+  /* safe area bottom */
+  .pb-safe { padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); }
+}
+
+@layer components {
+  .card-base {
+    @apply bg-white rounded-xl border border-black/5 shadow-card overflow-hidden;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md;
+  }
+  .btn-primary {
+    @apply flex items-center justify-center gap-2 bg-[var(--c-mid)] text-white font-semibold rounded-xl px-5 py-3 transition-all active:scale-95;
+  }
+  .btn-ghost {
+    @apply flex items-center gap-1.5 text-[var(--c-mid)] font-semibold text-sm px-3 py-1.5 rounded-lg bg-[var(--c-light)] transition-all active:scale-95;
+  }
+  .input {
+    @apply w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all;
+  }
+  .tag {
+    @apply inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-lg border bg-gray-50 border-gray-200 text-gray-600;
+  }
+}
+
+/* framer motion page transitions */
+.page-enter { animation: pageRise 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+@keyframes pageRise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
