@@ -451,9 +451,8 @@ const SEED_CARDS = [
       checkIn: 'After 15:00 · Sun 2 Aug', checkOut: '10:00am · Tue 4 Aug', nights: '2',
       guests: '6 guests',
       airbnb: 'true',
-      tip: '10 minutes from Efteling (not 20 — confirmed from the listing). Free parking on site. Call Sonny on +31 6 22351393.',
+      tip: '10 minutes from Efteling — confirmed from listing. Free parking on site. Call Sonny on +31 6 22351393. Book taxi to Efteling tonight for tomorrow morning (~€20–25).',
       nearest_station: 'Taxi from Tilburg station (~20 min)',
-      tip: 'Book a taxi for tomorrow morning to Efteling tonight — about 20 min and ~25 EUR.',
     }
   },
 
@@ -648,9 +647,8 @@ const SEED_CARDS = [
       checkIn: 'After 16:00 · Thu 6 Aug', checkOut: '11:00am · Sun 9 Aug', nights: '3',
       guests: '6 guests, 2 infants',
       airbnb: 'true',
-      tip: 'Call Peter on +32 475 35 99 38. Bruges train from Ostend station — 15 min, every 30 min.',
+      tip: 'Call Peter on +32 475 35 99 38. Bruges train from Ostend — 15 min every 30 min. De Lijn coastal tram stops near the flat.',
       nearest_station: 'Ostend station — 10 min walk',
-      tip: 'Bruges trains from Ostend run every 30 minutes and take 15 minutes. De Lijn coastal tram stops near the flat.',
     }
   },
 
