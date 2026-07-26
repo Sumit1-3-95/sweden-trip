@@ -10,11 +10,26 @@
     --c-acc: #F5C842;
   }
 
-  * { -webkit-tap-highlight-color: transparent; }
+  /* ── prevent iOS zoom on input focus ── */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+
+  html {
+    /* prevent overscroll bounce interfering with sheets */
+    overscroll-behavior: none;
+  }
 
   body {
     @apply bg-gray-100 overflow-x-hidden;
     -webkit-font-smoothing: antialiased;
+    /* prevent horizontal scroll */
+    max-width: 100vw;
   }
 
   .app-shell {
@@ -33,26 +48,58 @@
   .card-base {
     @apply bg-white rounded-xl border border-black/5 shadow-card overflow-hidden;
   }
+
   .chip {
     @apply inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md;
   }
-  .btn-primary {
-    @apply flex items-center justify-center gap-2 bg-[var(--c-mid)] text-white font-semibold rounded-xl px-5 py-3 transition-all active:scale-95;
-  }
-  .btn-ghost {
-    @apply flex items-center gap-1.5 text-[var(--c-mid)] font-semibold text-sm px-3 py-1.5 rounded-lg bg-[var(--c-light)] transition-all active:scale-95;
-  }
+
+  /* Note: avoid CSS var with opacity in Tailwind @apply — use inline style instead */
   .input {
-    @apply w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all;
+    @apply w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all;
+    font-size: 16px; /* prevents iOS zoom */
   }
+
   .tag {
     @apply inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-lg border bg-gray-50 border-gray-200 text-gray-600;
   }
+
+  .btn-primary {
+    @apply flex items-center justify-center gap-2 text-white font-semibold rounded-xl px-5 py-3 transition-all active:scale-95;
+  }
 }
 
-/* framer motion page transitions */
-.page-enter { animation: pageRise 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+/* page transition animation */
+.page-enter {
+  animation: pageRise 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
 @keyframes pageRise {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: none; }
+}
+
+/* bottom sheet animation */
+.sheet-enter {
+  animation: sheetUp 0.3s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+}
+
+@keyframes sheetUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+/* Card detail page — native push animation */
+.card-page-enter {
+  animation: cardPush 0.32s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes cardPush {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }

@@ -1,6 +1,7 @@
 'use client'
 import { DayCard, CountryTheme } from '@/types'
-import { Plane, Train, Home, AlertTriangle, FileText, Image } from 'lucide-react'
+import { Plane, Train, Home, AlertTriangle, FileText, Camera } from 'lucide-react'
+import { getPhotoUrl } from '@/lib/supabase'
 
 interface Props {
   card: DayCard
@@ -9,23 +10,15 @@ interface Props {
   onClick: () => void
 }
 
-const TYPE_CONFIG = {
-  activity:  { chipClass: 'bg-emerald-50 text-emerald-700', label: 'Activity' },
-  transport: { chipClass: 'bg-blue-50 text-blue-700',      label: 'Transport' },
-  stay:      { chipClass: 'bg-amber-50 text-amber-700',    label: 'Stay' },
-  alert:     { chipClass: 'bg-red-50 text-red-700',        label: 'Alert' },
-  free:      { chipClass: 'bg-gray-100 text-gray-600',     label: 'Note' },
+const TYPE_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
+  activity:  { bg: 'bg-emerald-50',  text: 'text-emerald-700', label: 'Activity' },
+  transport: { bg: 'bg-blue-50',     text: 'text-blue-700',    label: 'Transport' },
+  stay:      { bg: 'bg-amber-50',    text: 'text-amber-700',   label: 'Stay' },
+  alert:     { bg: 'bg-red-50',      text: 'text-red-700',     label: 'Alert' },
+  free:      { bg: 'bg-gray-100',    text: 'text-gray-600',    label: 'Note' },
 }
 
-const TYPE_ICON = {
-  activity:  null,
-  transport: Plane,
-  stay:      Home,
-  alert:     AlertTriangle,
-  free:      FileText,
-}
-
-const STATUS_DOT = {
+const STATUS_DOT: Record<string, string> = {
   done:     'bg-emerald-400',
   now:      'bg-blue-500 ring-4 ring-blue-100',
   upcoming: 'bg-gray-200 border-2 border-gray-300',
@@ -36,66 +29,157 @@ export default function TimelineCard({ card, isLast, theme, onClick }: Props) {
   const isAlert = card.type === 'alert'
   const isTransport = card.type === 'transport'
   const meta = card.metadata as Record<string, string> | null
-  const hasPhotos = card.photos && card.photos.length > 0
-  const TypeIcon = TYPE_ICON[card.type]
+  const firstPhoto = card.photos?.[0]
+  const photoUrl = firstPhoto ? (firstPhoto.url || getPhotoUrl(firstPhoto.storage_path)) : null
+  const photoCount = card.photos?.length || 0
 
   return (
     <div className="flex gap-3 mb-1">
-      {/* spine */}
-      <div className="flex flex-col items-center w-10 flex-shrink-0 pt-1">
-        <span className="text-[10px] font-bold text-gray-400 leading-tight text-center min-h-[22px] flex items-center">
-          {card.time_label?.replace(' ', '\n') || ''}
+      {/* timeline spine */}
+      <div className="flex flex-col items-center w-10 flex-shrink-0 pt-2">
+        <span className="text-[10px] font-bold text-gray-400 text-center leading-tight min-h-[20px]">
+          {card.time_label || ''}
         </span>
-        <div className={`w-2.5 h-2.5 rounded-full mt-1 flex-shrink-0 ${STATUS_DOT[card.status]}`} />
-        {!isLast && <div className="w-px flex-1 bg-gray-100 mt-1 min-h-[12px]" />}
+        <div className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${STATUS_DOT[card.status] || STATUS_DOT.upcoming}`} />
+        {!isLast && <div className="w-px flex-1 bg-gray-100 mt-1 min-h-3" />}
       </div>
 
       {/* card body */}
       <div className="flex-1 pb-3">
+
+        {/* alert — inline, no card chrome */}
         {isAlert ? (
-          <div className="bg-red-50 border border-red-200 border-l-4 border-l-red-400 rounded-xl p-3.5">
+          <div className="bg-red-50 border border-red-200 border-l-4 border-l-red-400 rounded-xl px-4 py-3">
             <div className="flex items-start gap-2">
               <AlertTriangle size={14} className="text-red-500 mt-0.5 flex-shrink-0" />
               <div>
-                <div className="text-[13px] font-bold text-red-800">{card.title}</div>
-                <div className="text-[12px] text-red-600 mt-1 leading-relaxed">{card.description}</div>
+                <p className="text-[13px] font-bold text-red-800 leading-snug">{card.title}</p>
+                {card.description && <p className="text-[12px] text-red-600 mt-1 leading-relaxed line-clamp-2">{card.description}</p>}
               </div>
             </div>
           </div>
+
+        /* transport — boarding pass style */
         ) : isTransport ? (
-          <TransportCard card={card} meta={meta} theme={theme} onClick={onClick} />
+          <button onClick={onClick} className="w-full text-left bg-white rounded-xl border border-black/5 shadow-card overflow-hidden active:scale-[.98] transition-all">
+            <div className="px-4 pt-3.5 pb-1 flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: theme.light }}>
+                {meta?.num?.match(/LH|SK|D8|FR/) || meta?.type === 'flight'
+                  ? <Plane size={15} style={{ color: theme.mid }} />
+                  : <Train size={15} style={{ color: theme.mid }} />}
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{meta?.op || 'Transport'}</p>
+                <p className="text-[13px] font-bold text-gray-900">{meta?.num || card.title}</p>
+              </div>
+              {meta?.ref && (
+                <span className="ml-auto text-[10px] font-mono font-bold px-2 py-0.5 rounded-md" style={{ background: theme.light, color: theme.dark }}>
+                  {meta.ref}
+                </span>
+              )}
+            </div>
+            {/* route */}
+            {(meta?.dep || meta?.arr) && (
+              <div className="flex items-center px-4 pb-3 gap-2">
+                <div>
+                  <p className="text-[20px] font-bold text-gray-900 leading-none tabular-nums">{meta.dep}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5 max-w-[90px] truncate">{meta.from}</p>
+                </div>
+                <div className="flex-1 flex items-center gap-1.5 px-2">
+                  <div className="flex-1 border-t border-dashed border-gray-200" />
+                  <span className="text-gray-300 text-xs">›</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-[20px] font-bold text-gray-900 leading-none tabular-nums">{meta.arr}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5 max-w-[90px] truncate text-right">{meta.to}</p>
+                </div>
+              </div>
+            )}
+            {meta?.carriage && (
+              <div className="border-t border-gray-50 px-4 py-2">
+                <span className="text-[11px] text-gray-400 font-medium">🪑 {meta.carriage} · All 5 passengers · Confirmed</span>
+              </div>
+            )}
+          </button>
+
+        /* activity / stay / free — photo card */
         ) : (
-          <button onClick={onClick} className="w-full text-left card-base active:scale-[.98] transition-all shadow-card">
-            {/* show first photo if exists */}
-            {hasPhotos && card.photos![0] && (
-              <div className="h-32 bg-gray-100 overflow-hidden relative">
-                <img src={card.photos![0].url} alt="" className="w-full h-full object-cover" />
-                {card.photos!.length > 1 && (
-                  <div className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Image size={10} />+{card.photos!.length - 1}
+          <button onClick={onClick} className="w-full text-left bg-white rounded-xl border border-black/5 shadow-card overflow-hidden active:scale-[.98] transition-all">
+            {/* single photo strip — only if photo exists */}
+            {photoUrl && (
+              <div className="relative" style={{ height: 140 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+                {/* photo count badge */}
+                {photoCount > 1 && (
+                  <div className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-white text-[10px] font-bold" style={{ background: 'rgba(0,0,0,0.5)' }}>
+                    <Camera size={10} />+{photoCount - 1} more
+                  </div>
+                )}
+                {/* status badge on photo */}
+                {card.status === 'now' && (
+                  <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: theme.mid, color: '#fff' }}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />Now
                   </div>
                 )}
               </div>
             )}
-            <div className="p-3.5">
-              <div className="flex items-start justify-between gap-2 mb-1.5">
-                <span className={`chip ${cfg.chipClass} flex items-center gap-1`}>
-                  {TypeIcon && <TypeIcon size={9} />}{cfg.label}
+
+            <div className="px-3.5 pt-3 pb-3.5">
+              {/* type + status row */}
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${cfg.bg} ${cfg.text}`}>
+                  {cfg.label}
                 </span>
-                {card.status === 'now' && (
-                  <span className="chip bg-blue-50 text-blue-700 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />Now
+                {!photoUrl && card.status === 'now' && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1" style={{ background: theme.light, color: theme.mid }}>
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: theme.mid }} />Now
                   </span>
                 )}
-                {card.status === 'done' && <span className="chip bg-gray-100 text-gray-500">Done ✓</span>}
+                {card.status === 'done' && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-100 text-gray-400">Done ✓</span>
+                )}
+                {/* camera icon if no photo yet — invite uploads */}
+                {!photoUrl && card.type !== 'alert' && (
+                  <span className="ml-auto flex items-center gap-1 text-[10px] text-gray-300 font-medium">
+                    <Camera size={11} />Add photo
+                  </span>
+                )}
               </div>
-              <div className="text-[15px] font-semibold text-gray-900 leading-snug mb-1">{card.title}</div>
+
+              <p className="text-[15px] font-semibold text-gray-900 leading-snug mb-1">{card.title}</p>
+
               {card.description && (
-                <div className="text-[12.5px] text-gray-500 leading-relaxed line-clamp-2">{card.description}</div>
+                <p className="text-[12.5px] text-gray-500 leading-relaxed line-clamp-2">{card.description}</p>
               )}
+
+              {/* tags — max 3 */}
               {card.tags?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
-                  {card.tags.slice(0, 4).map(t => <span key={t} className="tag">{t}</span>)}
+                  {card.tags.slice(0, 3).map(t => (
+                    <span key={t} className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-gray-50 border border-gray-100 text-gray-500">{t}</span>
+                  ))}
+                  {card.tags.length > 3 && (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-gray-50 text-gray-400">+{card.tags.length - 3}</span>
+                  )}
+                </div>
+              )}
+
+              {/* stay quick info */}
+              {card.type === 'stay' && meta?.host && (
+                <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-50">
+                  <div className="flex-1">
+                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Host</p>
+                    <p className="text-[12px] font-semibold text-gray-700">{meta.host}</p>
+                  </div>
+                  {meta.checkIn && <div className="flex-1">
+                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Check-in</p>
+                    <p className="text-[12px] font-semibold text-gray-700">{meta.checkIn}</p>
+                  </div>}
+                  {meta.nights && <div>
+                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Nights</p>
+                    <p className="text-[12px] font-semibold text-gray-700">{meta.nights}</p>
+                  </div>}
                 </div>
               )}
             </div>
@@ -103,51 +187,5 @@ export default function TimelineCard({ card, isLast, theme, onClick }: Props) {
         )}
       </div>
     </div>
-  )
-}
-
-function TransportCard({ card, meta, theme, onClick }: { card: DayCard; meta: Record<string, string> | null; theme: CountryTheme; onClick: () => void }) {
-  const isFllight = meta?.num?.includes('LH') || meta?.num?.includes('SK') || meta?.num?.includes('D8') || meta?.op?.toLowerCase().includes('lufthansa') || meta?.op?.toLowerCase().includes('norwegian') || meta?.op?.toLowerCase().includes('sas')
-  return (
-    <button onClick={onClick} className="w-full text-left card-base active:scale-[.98] transition-all shadow-card">
-      <div className="p-3.5">
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: theme.light }}>
-            {isFllight ? <Plane size={16} style={{ color: theme.mid }} /> : <Train size={16} style={{ color: theme.mid }} />}
-          </div>
-          <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{isFllight ? 'Flight' : 'Train'}</div>
-            <div className="text-[13px] font-bold text-gray-800">{meta?.op} · {meta?.num}</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex-none">
-            <div className="text-[22px] font-bold text-gray-900 leading-none tabular-nums">{meta?.dep || '—'}</div>
-            <div className="text-[11px] text-gray-400 mt-0.5 max-w-[80px] truncate">{meta?.from}</div>
-          </div>
-          <div className="flex-1 flex items-center gap-1.5 px-2">
-            <div className="flex-1 border-t-[1.5px] border-dashed border-gray-200" />
-            {isFllight ? <Plane size={13} className="text-gray-300" /> : <Train size={13} className="text-gray-300" />}
-          </div>
-          <div className="flex-none text-right">
-            <div className="text-[22px] font-bold text-gray-900 leading-none tabular-nums">{meta?.arr || '—'}</div>
-            <div className="text-[11px] text-gray-400 mt-0.5 max-w-[80px] truncate">{meta?.to}</div>
-          </div>
-        </div>
-        {meta?.via && <div className="text-[11px] text-gray-400 text-center mt-1.5">via {meta.via}</div>}
-        <div className="flex gap-2 flex-wrap mt-3">
-          {meta?.carriage && <span className="tag">🪑 {meta.carriage}</span>}
-          <span className="tag">👨‍👩‍👧‍👦 All 5 passengers</span>
-          <span className="tag text-emerald-700 bg-emerald-50 border-emerald-200">✓ Confirmed</span>
-        </div>
-        {meta?.ref && (
-          <div className="mt-3 text-center text-[11px] font-bold tracking-widest rounded-lg py-1.5"
-            style={{ background: theme.light, color: theme.dark }}>
-            REF · {meta.ref}
-          </div>
-        )}
-      </div>
-    </button>
   )
 }

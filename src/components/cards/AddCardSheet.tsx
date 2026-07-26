@@ -68,22 +68,22 @@ export default function AddCardSheet({ dayNumber, theme, onClose, onAdded }: Pro
 
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5 block">Title *</label>
-            <input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Vasa Museum" autoFocus />
+            <input style={{fontSize:16}} className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Vasa Museum" autoFocus />
           </div>
 
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5 block">Description</label>
-            <textarea className="input resize-none" rows={3} value={description} onChange={e => setDescription(e.target.value)} placeholder="What's happening here..." />
+            <textarea style={{fontSize:16}} className="input resize-none" rows={3} value={description} onChange={e => setDescription(e.target.value)} placeholder="What's happening here..." />
           </div>
 
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5 block">Time</label>
-            <input className="input" value={timeLabel} onChange={e => setTimeLabel(e.target.value)} placeholder="e.g. 9am, Morning, 14:25" />
+            <input style={{fontSize:16}} className="input" value={timeLabel} onChange={e => setTimeLabel(e.target.value)} placeholder="e.g. 9am, Morning, 14:25" />
           </div>
 
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5 block">Tags <span className="font-normal normal-case">(comma separated)</span></label>
-            <input className="input" value={tags} onChange={e => setTags(e.target.value)} placeholder="Family friendly, Ticket, Must-do" />
+            <input style={{fontSize:16}} className="input" value={tags} onChange={e => setTags(e.target.value)} placeholder="Family friendly, Ticket, Must-do" />
           </div>
 
           <button onClick={handleSave} disabled={saving || !title.trim()}

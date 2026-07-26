@@ -4,9 +4,13 @@ import { ChevronDown, Plane, Train } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { DayCard, DAY_META, COUNTRY_THEMES, DayData, CountryTheme } from '@/types'
 
-interface Props { activeDay: number; setActiveDay: (d: number) => void }
+interface Props {
+  activeDay: number
+  setActiveDay: (d: number) => void
+  onOpenCard: (card: DayCard, theme: CountryTheme) => void
+}
 
-export default function JourneyTab({ activeDay, setActiveDay }: Props) {
+export default function JourneyTab({ activeDay, setActiveDay, onOpenCard }: Props) {
   const [cardsByDay, setCardsByDay] = useState<Record<number, DayCard[]>>({})
   const [openDays, setOpenDays] = useState<Set<number>>(new Set())
   const stripRef = useRef<HTMLDivElement>(null)
