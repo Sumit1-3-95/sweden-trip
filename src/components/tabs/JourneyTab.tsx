@@ -168,7 +168,7 @@ function CountryDivider({ d }: { d: DayData }) {
   )
 }
 
-function JourneyCardRow({ card, theme }: { card: DayCard; theme: ReturnType<typeof COUNTRY_THEMES[keyof typeof COUNTRY_THEMES]> }) {
+function JourneyCardRow({ card, theme }: { card: DayCard; theme: CountryTheme }) {
   const meta = card.metadata as Record<string, string> | null
   const isAlert = card.type === 'alert'
   return (
