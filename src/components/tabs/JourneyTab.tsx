@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ChevronDown, Plane, Train } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { DayCard, DAY_META, COUNTRY_THEMES, DayData } from '@/types'
+import { DayCard, DAY_META, COUNTRY_THEMES, DayData, CountryTheme } from '@/types'
 
 interface Props { activeDay: number; setActiveDay: (d: number) => void }
 
