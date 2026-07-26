@@ -1,4 +1,6 @@
 'use client'
+import { useState, useRef, useEffect } from 'react'
+import { Camera } from 'lucide-react'
 import { CountryTheme, DayData } from '@/types'
 
 const SCENES: Record<string, string> = {
@@ -8,42 +10,108 @@ const SCENES: Record<string, string> = {
   be: `<g fill="white" opacity=".9"><rect x="0" y="108" width="430" height="12"/><rect x="15" y="42" width="24" height="66"/><polygon points="27,28 15,42 39,42"/><rect x="40" y="48" width="22" height="60"/><polygon points="51,35 40,48 62,48"/><rect x="75" y="25" width="30" height="83"/><rect x="72" y="19" width="36" height="9"/><rect x="80" y="8" width="20" height="14"/><polygon points="90,0 80,8 100,8"/><rect x="215" y="28" width="36" height="80"/><rect x="212" y="22" width="42" height="8"/><rect x="222" y="6" width="22" height="18"/><polygon points="233,0 222,6 244,6"/><circle cx="310" cy="30" r="18" fill="none" stroke="white" stroke-width="4"/><circle cx="285" cy="65" r="14" fill="none" stroke="white" stroke-width="4"/><circle cx="335" cy="65" r="14" fill="none" stroke="white" stroke-width="4"/><line x1="310" y1="48" x2="285" y2="51" stroke="white" stroke-width="4"/><line x1="310" y1="48" x2="335" y2="51" stroke="white" stroke-width="4"/><rect x="306" y="78" width="8" height="30"/></g>`,
 }
 
+const HERO_STORAGE_KEY = 'hero_images'
+
 interface Props { theme: CountryTheme; dayMeta: DayData; activeDay: number }
 
 export default function HeroSection({ theme, dayMeta, activeDay }: Props) {
   const scene = SCENES[dayMeta.country] || SCENES.se
+  const [heroImg, setHeroImg] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  // Load saved hero image for this day from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(HERO_STORAGE_KEY)
+      if (saved) {
+        const map = JSON.parse(saved)
+        setHeroImg(map[activeDay] || null)
+      }
+    } catch { setHeroImg(null) }
+  }, [activeDay])
+
+  function handleHeroUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string
+      setHeroImg(dataUrl)
+      // persist to localStorage keyed by day
+      try {
+        const saved = localStorage.getItem(HERO_STORAGE_KEY)
+        const map = saved ? JSON.parse(saved) : {}
+        map[activeDay] = dataUrl
+        localStorage.setItem(HERO_STORAGE_KEY, JSON.stringify(map))
+      } catch {}
+      setUploading(false)
+    }
+    reader.readAsDataURL(file)
+    if (fileRef.current) fileRef.current.value = ''
+  }
 
   return (
-    <div className="relative overflow-hidden min-h-[220px] flex flex-col justify-end pt-14 pb-6 px-5"
-      style={{ background: theme.gradient }}>
-      {/* pattern overlay */}
-      <div className="absolute inset-0 opacity-5"
-        style={{ backgroundImage: theme.pattern, backgroundSize: dayMeta.country === 'dk' ? '24px 24px' : undefined }} />
+    <div
+      className="relative overflow-hidden flex flex-col justify-end pb-6 px-5"
+      style={{
+        minHeight: 220,
+        background: heroImg ? 'transparent' : theme.gradient,
+        paddingTop: 'max(56px, env(safe-area-inset-top))',
+      }}
+    >
+      {/* custom hero image */}
+      {heroImg && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          {/* dark gradient overlay so text is readable */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }} />
+        </>
+      )}
 
-      {/* city silhouette */}
-      <svg className="absolute bottom-0 left-0 right-0 w-full h-28 opacity-15 transition-opacity duration-500"
-        viewBox="0 0 430 120" preserveAspectRatio="xMidYMax meet"
-        xmlns="http://www.w3.org/2000/svg"
-        dangerouslySetInnerHTML={{ __html: scene }} />
+      {/* SVG city silhouette — only show when no custom image */}
+      {!heroImg && (
+        <>
+          <div className="absolute inset-0 opacity-5"
+            style={{ backgroundImage: theme.pattern, backgroundSize: dayMeta.country === 'dk' ? '24px 24px' : undefined }} />
+          <svg className="absolute bottom-0 left-0 right-0 w-full h-28 opacity-15"
+            viewBox="0 0 430 120" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg"
+            dangerouslySetInnerHTML={{ __html: scene }} />
+        </>
+      )}
 
-      {/* day badge */}
-      <div className="absolute top-14 right-5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-xl px-3.5 py-2.5 text-center">
-        <div className="text-2xl font-bold text-white leading-none">{activeDay}</div>
-        <div className="text-[10px] text-white/55 mt-0.5 font-medium">of 22</div>
+      {/* day badge — top right */}
+      <div className="absolute top-0 right-5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-2 text-center"
+        style={{ marginTop: 'max(14px, env(safe-area-inset-top))' }}>
+        <div className="text-xl font-bold text-white leading-none">{activeDay}</div>
+        <div className="text-[9px] text-white/55 mt-0.5 font-medium">of 22</div>
       </div>
 
-      {/* content */}
+      {/* subtle camera button — top left */}
+      <button
+        onClick={() => fileRef.current?.click()}
+        disabled={uploading}
+        className="absolute top-0 left-5 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 disabled:opacity-40"
+        style={{ marginTop: 'max(14px, env(safe-area-inset-top))', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
+        title="Change hero photo"
+      >
+        <Camera size={13} className="text-white" />
+      </button>
+
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleHeroUpload} />
+
+      {/* text content */}
       <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-2.5">
-          <span className="text-base">{theme.flag}</span>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-sm">{theme.flag}</span>
           <span className="text-[11px] font-semibold uppercase tracking-widest text-white/65">{dayMeta.city}, {theme.name}</span>
-          <span className="w-1 h-1 rounded-full bg-white/30" />
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-white/45">Day {activeDay}</span>
         </div>
-        <h1 className="font-serif text-[30px] font-light text-white leading-[1.1] mb-1.5">
+        <h1 className="font-serif text-[28px] font-light text-white leading-[1.1] mb-1">
           {dayMeta.title}
         </h1>
-        <p className="text-[13px] text-white/65 font-normal">{dayMeta.weekday} {dayMeta.date} · {dayMeta.preview}</p>
+        <p className="text-[12px] text-white/65">{dayMeta.weekday} {dayMeta.date} · {dayMeta.preview}</p>
       </div>
     </div>
   )
