@@ -78,6 +78,18 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
     if (form.day_number !== card.day_number) onClose()
   }
 
+  async function deleteCard() {
+    if (!confirm('Delete this card? This cannot be undone.')) return
+    // Delete all photos first
+    for (const p of photos) {
+      await supabase.storage.from('trip-photos').remove([p.storage_path])
+    }
+    await supabase.from('card_photos').delete().eq('card_id', card.id)
+    await supabase.from('day_cards').delete().eq('id', card.id)
+    onUpdated()
+    onClose()
+  }
+
   const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
@@ -147,15 +159,21 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
 
           <div className="flex-1" />
 
-          {/* Upload photo button */}
-          <button
-            onPointerDown={e => { e.stopPropagation(); e.preventDefault(); fileRef.current?.click() }}
-            disabled={uploading || photos.length >= 5}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold border border-gray-200 bg-gray-50 text-gray-700 active:bg-gray-100 transition-all disabled:opacity-40"
-          >
-            <Camera size={14} style={{ color: typeColor }} />
-            {uploading ? 'Uploading…' : 'Photo'}
-          </button>
+          {/* Upload photo button — use label for reliable file picker on iOS/Android */}
+          {photos.length < 5 && !uploading ? (
+            <label
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold border border-gray-200 bg-gray-50 text-gray-700 active:bg-gray-100 transition-all cursor-pointer"
+              htmlFor="card-photo-upload"
+            >
+              <Camera size={14} style={{ color: typeColor }} />
+              Photo
+            </label>
+          ) : (
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold border border-gray-200 bg-gray-50 text-gray-400">
+              <Camera size={14} />
+              {uploading ? 'Uploading…' : 'Max 5'}
+            </div>
+          )}
 
           {/* Edit / Save button */}
           {editing ? (
@@ -180,6 +198,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
 
         <input
           ref={fileRef}
+          id="card-photo-upload"
           type="file"
           accept="image/*"
           multiple
@@ -294,6 +313,17 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                   ))}
                 </div>
               </Field>
+
+              {/* Delete card */}
+              <div className="pt-4 border-t border-gray-100">
+                <button
+                  onClick={deleteCard}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-semibold text-red-600 border border-red-200 bg-red-50 active:bg-red-100 transition-all"
+                >
+                  <Trash2 size={14} />
+                  Delete this card
+                </button>
+              </div>
             </div>
           ) : (
             /* ── View mode ── */
@@ -468,23 +498,21 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
               <Section>
                 <div className="flex items-center justify-between mb-3">
                   <SectionTitle icon={<Camera size={13} />} label={`Photos ${photos.length > 0 ? `(${photos.length}/5)` : ''}`} color={typeColor} />
-                  {photos.length < 5 && (
-                    <button
-                      onPointerDown={e => { e.stopPropagation(); e.preventDefault(); fileRef.current?.click() }}
-                      disabled={uploading}
-                      className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 bg-white active:bg-gray-50 disabled:opacity-40 transition-all"
+                  {photos.length < 5 && !uploading && (
+                    <label
+                      htmlFor="card-photo-upload"
+                      className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 bg-white active:bg-gray-50 transition-all cursor-pointer"
                     >
                       <Plus size={11} />
-                      {uploading ? 'Uploading…' : 'Add'}
-                    </button>
+                      Add
+                    </label>
                   )}
                 </div>
 
                 {photos.length === 0 ? (
                   <button
-                    onPointerDown={e => { e.stopPropagation(); e.preventDefault(); fileRef.current?.click() }}
-                    disabled={uploading}
-                    className="w-full flex flex-col items-center justify-center gap-3 py-10 rounded-2xl border-2 border-dashed border-gray-200 active:bg-gray-50 transition-all disabled:opacity-50"
+                    onClick={() => fileRef.current?.click()}
+                    className="w-full flex flex-col items-center justify-center gap-3 py-10 rounded-2xl border-2 border-dashed border-gray-200 active:bg-gray-50 transition-all"
                   >
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
                       style={{ background: theme.light }}>
@@ -545,13 +573,13 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                           </div>
                         ))}
                         {photos.length < 5 && (
-                          <button
-                            onPointerDown={e => { e.stopPropagation(); e.preventDefault(); fileRef.current?.click() }}
-                            className="flex-1 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 active:bg-gray-50 transition-all"
+                          <label
+                            htmlFor="card-photo-upload"
+                            className="flex-1 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 active:bg-gray-50 transition-all cursor-pointer"
                             style={{ height: 80 }}>
                             <Plus size={16} className="text-gray-300" />
                             <span className="text-[10px] text-gray-300 font-medium">Add</span>
-                          </button>
+                          </label>
                         )}
                       </div>
                     )}
