@@ -28,9 +28,12 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null)
+  const [carouselIdx, setCarouselIdx] = useState(0)
   const [photos, setPhotos] = useState(
     (card.photos || []).map(p => ({ ...p, url: p.url || getPhotoUrl(p.storage_path) }))
   )
+  // When new photo added, jump carousel to it
+  const prevPhotoCount = useRef(card.photos?.length || 0)
   const fileRef = useRef<HTMLInputElement>(null)
   const meta = card.metadata as Record<string, string> | null
   const isTransport = card.type === 'transport'
@@ -118,6 +121,8 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
     setUploading(false)
     if (fileRef.current) fileRef.current.value = ''
     onUpdated()
+    // jump carousel to newest photo
+    setCarouselIdx(prev => Math.max(0, photos.length - 1))
   }, [card.id, photos.length, onUpdated])
 
   async function deletePhoto(id: string, path: string) {
@@ -207,7 +212,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
         />
 
         {/* ── Scrollable body ── */}
-        <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
 
           {/* Hero colour band */}
           <div
@@ -249,7 +254,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
 
           {editing ? (
             /* ── Edit form ── */
-            <div className="px-4 py-5 space-y-4">
+            <div className="px-4 py-5 pb-24 space-y-4">
               <Field label="Title">
                 <input
                   style={{ fontSize: 16 }}
@@ -327,7 +332,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
             </div>
           ) : (
             /* ── View mode ── */
-            <div className="pb-12">
+            <div className="pb-24">
 
               {/* Description */}
               {card.description && (

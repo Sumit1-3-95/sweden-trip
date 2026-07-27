@@ -10,6 +10,18 @@ interface Props {
   onClick: () => void
 }
 
+// Pastel tag colour palette — cycles through these
+const TAG_COLORS = [
+  { background: '#EDE9FE', color: '#6D28D9' }, // purple
+  { background: '#D1FAE5', color: '#065F46' }, // green
+  { background: '#DBEAFE', color: '#1E40AF' }, // blue
+  { background: '#FCE7F3', color: '#9D174D' }, // pink
+  { background: '#FEF3C7', color: '#92400E' }, // amber
+  { background: '#CFFAFE', color: '#155E75' }, // cyan
+  { background: '#FFE4E6', color: '#9F1239' }, // rose
+  { background: '#F0FDF4', color: '#166534' }, // lime
+]
+
 const TYPE_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
   activity:  { bg: 'bg-emerald-50',  text: 'text-emerald-700', label: 'Activity' },
   transport: { bg: 'bg-blue-50',     text: 'text-blue-700',    label: 'Transport' },
@@ -153,14 +165,14 @@ export default function TimelineCard({ card, isLast, theme, onClick }: Props) {
                 <p className="text-[12.5px] text-gray-500 leading-relaxed line-clamp-2">{card.description}</p>
               )}
 
-              {/* tags — max 3 */}
+              {/* tags — colourful pastels */}
               {card.tags?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
-                  {card.tags.slice(0, 3).map(t => (
-                    <span key={t} className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-gray-50 border border-gray-100 text-gray-500">{t}</span>
+                  {card.tags.slice(0, 3).map((t, i) => (
+                    <span key={t} className="text-[10px] font-semibold px-2 py-0.5 rounded-md" style={TAG_COLORS[i % TAG_COLORS.length]}>{t}</span>
                   ))}
                   {card.tags.length > 3 && (
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-gray-50 text-gray-400">+{card.tags.length - 3}</span>
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-gray-100 text-gray-400">+{card.tags.length - 3}</span>
                   )}
                 </div>
               )}

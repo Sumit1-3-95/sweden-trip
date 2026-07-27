@@ -11,7 +11,6 @@ const SCENES: Record<string, string> = {
 }
 
 const HERO_STORAGE_KEY = 'hero_images'
-
 interface Props { theme: CountryTheme; dayMeta: DayData; activeDay: number }
 
 export default function HeroSection({ theme, dayMeta, activeDay }: Props) {
@@ -20,14 +19,10 @@ export default function HeroSection({ theme, dayMeta, activeDay }: Props) {
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Load saved hero image for this day from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem(HERO_STORAGE_KEY)
-      if (saved) {
-        const map = JSON.parse(saved)
-        setHeroImg(map[activeDay] || null)
-      }
+      if (saved) { const map = JSON.parse(saved); setHeroImg(map[activeDay] || null) }
     } catch { setHeroImg(null) }
   }, [activeDay])
 
@@ -39,7 +34,6 @@ export default function HeroSection({ theme, dayMeta, activeDay }: Props) {
     reader.onload = (ev) => {
       const dataUrl = ev.target?.result as string
       setHeroImg(dataUrl)
-      // persist to localStorage keyed by day
       try {
         const saved = localStorage.getItem(HERO_STORAGE_KEY)
         const map = saved ? JSON.parse(saved) : {}
@@ -56,7 +50,7 @@ export default function HeroSection({ theme, dayMeta, activeDay }: Props) {
     <div
       className="relative overflow-hidden flex flex-col justify-end pb-6 px-5"
       style={{
-        minHeight: 220,
+        minHeight: 230,
         background: heroImg ? 'transparent' : theme.gradient,
         paddingTop: 'max(56px, env(safe-area-inset-top))',
       }}
@@ -66,16 +60,17 @@ export default function HeroSection({ theme, dayMeta, activeDay }: Props) {
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          {/* dark gradient overlay so text is readable */}
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }} />
+          {/* strong gradient at bottom for text legibility */}
+          <div className="absolute inset-0" style={{
+            background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.08) 100%)'
+          }} />
         </>
       )}
 
-      {/* SVG city silhouette — only show when no custom image */}
+      {/* gradient background when no custom image */}
       {!heroImg && (
         <>
-          <div className="absolute inset-0 opacity-5"
-            style={{ backgroundImage: theme.pattern, backgroundSize: dayMeta.country === 'dk' ? '24px 24px' : undefined }} />
+          <div className="absolute inset-0 opacity-5" style={{ backgroundImage: theme.pattern }} />
           <svg className="absolute bottom-0 left-0 right-0 w-full h-28 opacity-15"
             viewBox="0 0 430 120" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg"
             dangerouslySetInnerHTML={{ __html: scene }} />
@@ -83,35 +78,58 @@ export default function HeroSection({ theme, dayMeta, activeDay }: Props) {
       )}
 
       {/* day badge — top right */}
-      <div className="absolute top-0 right-5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-2 text-center"
-        style={{ marginTop: 'max(14px, env(safe-area-inset-top))' }}>
+      <div className="absolute right-5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-2 text-center"
+        style={{ top: 'max(14px, env(safe-area-inset-top))' }}>
         <div className="text-xl font-bold text-white leading-none">{activeDay}</div>
         <div className="text-[9px] text-white/55 mt-0.5 font-medium">of 22</div>
       </div>
 
-      {/* subtle camera button — top left */}
-      <button
-        onClick={() => fileRef.current?.click()}
-        disabled={uploading}
-        className="absolute top-0 left-5 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 disabled:opacity-40"
-        style={{ marginTop: 'max(14px, env(safe-area-inset-top))', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
+      {/* camera button — top left, subtle */}
+      <label
+        htmlFor="hero-photo-upload"
+        className="absolute left-5 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer"
+        style={{ top: 'max(14px, env(safe-area-inset-top))', background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}
         title="Change hero photo"
       >
         <Camera size={13} className="text-white" />
-      </button>
+      </label>
+      <input id="hero-photo-upload" ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleHeroUpload} />
 
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleHeroUpload} />
-
-      {/* text content */}
+      {/* text content — glass pill background for visibility */}
       <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-sm">{theme.flag}</span>
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-white/65">{dayMeta.city}, {theme.name}</span>
+        {/* glass background strip behind text */}
+        <div
+          className="absolute inset-0 rounded-2xl -mx-3 -my-2 px-3 py-2"
+          style={{
+            background: heroImg
+              ? 'transparent'  // gradient overlay handles it when there's a photo
+              : 'transparent', // gradient bg handles it without photo
+          }}
+        />
+        <div className="relative">
+          {/* location row — glass pill */}
+          <div
+            className="inline-flex items-center gap-2 mb-2.5 px-2.5 py-1 rounded-full"
+            style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(8px)' }}
+          >
+            <span className="text-sm leading-none">{theme.flag}</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-white/90">{dayMeta.city} · {theme.name}</span>
+          </div>
+          {/* title — shadow for legibility over any background */}
+          <h1
+            className="font-serif text-[30px] font-light text-white leading-[1.1] mb-1.5"
+            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.45)' }}
+          >
+            {dayMeta.title}
+          </h1>
+          {/* subtitle — glass pill */}
+          <div
+            className="inline-flex items-center px-2.5 py-1 rounded-full"
+            style={{ background: 'rgba(0,0,0,0.22)', backdropFilter: 'blur(8px)' }}
+          >
+            <p className="text-[11px] text-white/90 font-medium">{dayMeta.weekday} {dayMeta.date} · {dayMeta.preview}</p>
+          </div>
         </div>
-        <h1 className="font-serif text-[28px] font-light text-white leading-[1.1] mb-1">
-          {dayMeta.title}
-        </h1>
-        <p className="text-[12px] text-white/65">{dayMeta.weekday} {dayMeta.date} · {dayMeta.preview}</p>
       </div>
     </div>
   )

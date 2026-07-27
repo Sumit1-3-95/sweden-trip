@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Pencil, Check, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { DayCard, DayData, CountryTheme, COUNTRY_THEMES } from '@/types'
+import { DayCard, DayData, CountryTheme, COUNTRY_THEMES, DAY_META } from '@/types'
 import HeroSection from '@/components/today/HeroSection'
 import DateRail from '@/components/today/DateRail'
 import QuickPills from '@/components/today/QuickPills'
@@ -21,7 +21,25 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
   const [cards, setCards] = useState<DayCard[]>([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
+
+  // Editable day heading
+  const [editingHeading, setEditingHeading] = useState(false)
+  const [headingValue, setHeadingValue] = useState(dayMeta.title)
+  const [headingDraft, setHeadingDraft] = useState(dayMeta.title)
+  const headingInputRef = useRef<HTMLInputElement>(null)
+
   const railRef = useRef<HTMLDivElement>(null)
+
+  // Reset heading when day changes
+  useEffect(() => {
+    setHeadingValue(dayMeta.title)
+    setHeadingDraft(dayMeta.title)
+    setEditingHeading(false)
+  }, [activeDay, dayMeta.title])
+
+  useEffect(() => {
+    if (editingHeading) headingInputRef.current?.focus()
+  }, [editingHeading])
 
   useEffect(() => { fetchCards() }, [activeDay])
 
@@ -52,18 +70,70 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
     }, 50)
   }
 
+  function saveHeading() {
+    if (headingDraft.trim()) setHeadingValue(headingDraft.trim())
+    setEditingHeading(false)
+  }
+
+  function cancelHeading() {
+    setHeadingDraft(headingValue)
+    setEditingHeading(false)
+  }
+
   return (
-    <div className="pb-28">
-      <HeroSection theme={theme} dayMeta={dayMeta} activeDay={activeDay} />
+    <div className="pb-36">
+      <HeroSection theme={theme} dayMeta={{ ...dayMeta, title: headingValue }} activeDay={activeDay} />
       <DateRail ref={railRef} activeDay={activeDay} onDayChange={handleDayChange} />
       <QuickPills dayMeta={dayMeta} theme={theme} cards={cards} />
 
-      <div className="px-4 pb-2 pt-3">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
-          {dayMeta.weekday} {dayMeta.date} · plan
-        </p>
+      {/* ── Day heading row — editable ── */}
+      <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+        {editingHeading ? (
+          <>
+            <input
+              ref={headingInputRef}
+              style={{ fontSize: 16 }}
+              className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[13px] font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              value={headingDraft}
+              onChange={e => setHeadingDraft(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') saveHeading(); if (e.key === 'Escape') cancelHeading() }}
+              placeholder="Day heading…"
+            />
+            <button
+              onClick={saveHeading}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white transition-all active:scale-90 flex-shrink-0"
+              style={{ background: theme.mid }}
+            >
+              <Check size={14} />
+            </button>
+            <button
+              onClick={cancelHeading}
+              className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-200 bg-gray-50 text-gray-500 transition-all active:scale-90 flex-shrink-0"
+            >
+              <X size={14} />
+            </button>
+          </>
+        ) : (
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                {dayMeta.weekday} {dayMeta.date} · plan
+              </p>
+              <p className="text-[14px] font-semibold text-gray-700 mt-0.5 truncate">{headingValue}</p>
+            </div>
+            {/* subtle edit button */}
+            <button
+              onClick={() => { setHeadingDraft(headingValue); setEditingHeading(true) }}
+              className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-100 bg-gray-50 text-gray-400 hover:text-gray-600 transition-all active:scale-90 flex-shrink-0"
+              title="Edit day heading"
+            >
+              <Pencil size={11} />
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Timeline */}
       <div className="px-4">
         {loading ? (
           <div className="space-y-3 pt-2">
@@ -84,10 +154,7 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
               card={card}
               isLast={idx === cards.length - 1}
               theme={theme}
-              onClick={() => {
-                // pass correct country theme for the card's day
-                onOpenCard(card, theme)
-              }}
+              onClick={() => onOpenCard(card, theme)}
             />
           ))
         )}
