@@ -428,31 +428,105 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                   {isStay && meta && (
                     <Sec>
                       <SecTitle icon={<MapPin size={13} />} label="Stay details" color={typeColor} />
-                      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                        {meta.property_name && <MRow label="Property" value={meta.property_name} />}
-                        {meta.host && <MRow label="Host" value={meta.host} />}
-                        {meta.host_phone && <MRow label="Phone" value={meta.host_phone} />}
-                        {meta.airbnb_ref && <MRow label="Ref" value={meta.airbnb_ref} mono />}
-                        {meta.address && <MRow label="Address" value={meta.address} />}
-                        {meta.checkIn && <MRow label="Check-in" value={meta.checkIn} />}
-                        {meta.checkOut && <MRow label="Check-out" value={meta.checkOut} />}
-                        {meta.nights && <MRow label="Nights" value={meta.nights} />}
-                        {meta.guests && <MRow label="Guests" value={meta.guests} />}
-                        {meta.nearest_station && <MRow label="Nearest stop" value={meta.nearest_station} />}
-                        {meta.note && <MRow label="Note" value={meta.note} warn />}
-                        {meta.alert && (
-                          <div className="px-4 py-3 bg-red-50 border-t border-red-100">
-                            <p className="text-[12px] text-red-700 font-medium leading-relaxed">{meta.alert}</p>
+
+                      {/* Property header card */}
+                      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-3">
+                        {/* Property name banner */}
+                        {meta.property_name && (
+                          <div className="px-4 py-3 border-b border-gray-50" style={{ background: theme.light }}>
+                            <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: theme.mid }}>Property</p>
+                            <p className="text-[15px] font-bold" style={{ color: theme.dark }}>{meta.property_name}</p>
                           </div>
                         )}
-                        {meta.airbnb && (
-                          <a href="https://www.airbnb.com" target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-3 px-4 py-3 border-t border-gray-50 bg-white no-underline">
-                            <div className="w-7 h-7 bg-[#FF5A5F] rounded-full flex items-center justify-center flex-shrink-0">
-                              <span className="text-white text-[10px] font-bold">A</span>
+                        {/* Check-in / Check-out row */}
+                        {(meta.checkIn || meta.checkOut) && (
+                          <div className="flex divide-x divide-gray-50">
+                            {meta.checkIn && (
+                              <div className="flex-1 px-4 py-3">
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1">Check-in</p>
+                                <p className="text-[13px] font-bold text-gray-800">{meta.checkIn}</p>
+                              </div>
+                            )}
+                            {meta.checkOut && (
+                              <div className="flex-1 px-4 py-3">
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-1">Check-out</p>
+                                <p className="text-[13px] font-bold text-gray-800">{meta.checkOut}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {/* nights + guests */}
+                        {(meta.nights || meta.guests) && (
+                          <div className="flex divide-x divide-gray-50 border-t border-gray-50">
+                            {meta.nights && (
+                              <div className="flex-1 px-4 py-2.5">
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">Nights</p>
+                                <p className="text-[13px] font-semibold text-gray-700">{meta.nights}</p>
+                              </div>
+                            )}
+                            {meta.guests && (
+                              <div className="flex-1 px-4 py-2.5">
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">Guests</p>
+                                <p className="text-[12px] font-semibold text-gray-700">{meta.guests}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Host + contact */}
+                      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-3">
+                        {meta.host && <MRow label="Host" value={meta.host} />}
+                        {meta.host_phone && (
+                          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-0 bg-white">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 min-w-[80px]">Phone</span>
+                            <a href={`tel:${meta.host_phone}`}
+                              className="text-[13px] font-semibold flex items-center gap-1.5 no-underline"
+                              style={{ color: typeColor }}>
+                              📞 {meta.host_phone}
+                            </a>
+                          </div>
+                        )}
+                        {meta.airbnb_ref && <MRow label="Ref" value={meta.airbnb_ref} mono />}
+                        {meta.nearest_station && <MRow label="Nearest stop" value={meta.nearest_station} />}
+                        {meta.note && <MRow label="Note" value={meta.note} warn />}
+                      </div>
+
+                      {/* Address */}
+                      {meta.address && (
+                        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-3">
+                          <MRow label="Address" value={meta.address} />
+                        </div>
+                      )}
+
+                      {/* Alert */}
+                      {meta.alert && (
+                        <div className="bg-red-50 border border-red-200 border-l-4 border-l-red-400 rounded-2xl px-4 py-3 mb-3">
+                          <p className="text-[12px] text-red-700 font-medium leading-relaxed">{meta.alert}</p>
+                        </div>
+                      )}
+
+                      {/* Action buttons — Maps + Airbnb */}
+                      <div className="flex gap-3">
+                        {meta.maps_url && (
+                          <a href={meta.maps_url} target="_blank" rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-gray-200 bg-white no-underline active:scale-95 transition-all">
+                            <span className="text-xl">🗺️</span>
+                            <div>
+                              <p className="text-[12px] font-bold text-gray-800">Open Maps</p>
+                              <p className="text-[10px] text-gray-400">Get directions</p>
                             </div>
-                            <span className="text-[13px] font-semibold text-orange-700 flex-1">Open in Airbnb</span>
-                            <ExternalLink size={14} className="text-orange-400" />
+                          </a>
+                        )}
+                        {(meta.airbnb_url || meta.airbnb) && (
+                          <a href={meta.airbnb_url || 'https://www.airbnb.com'} target="_blank" rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl no-underline active:scale-95 transition-all"
+                            style={{ background: '#FF5A5F' }}>
+                            <span className="text-xl">🏠</span>
+                            <div>
+                              <p className="text-[12px] font-bold text-white">Airbnb</p>
+                              <p className="text-[10px] text-white/70">View listing</p>
+                            </div>
                           </a>
                         )}
                       </div>

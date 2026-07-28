@@ -1,6 +1,6 @@
 'use client'
 import { DayCard, CountryTheme } from '@/types'
-import { Plane, Train, Home, AlertTriangle, FileText, Camera } from 'lucide-react'
+import { Plane, Train, Home, AlertTriangle, FileText, Camera, Pencil } from 'lucide-react'
 import { getPhotoUrl } from '@/lib/supabase'
 
 interface Props {
@@ -59,17 +59,18 @@ export default function TimelineCard({ card, isLast, theme, onClick }: Props) {
       {/* card body */}
       <div className="flex-1 pb-3">
 
-        {/* alert — inline, no card chrome */}
+        {/* alert — tappable to edit/delete */}
         {isAlert ? (
-          <div className="bg-red-50 border border-red-200 border-l-4 border-l-red-400 rounded-xl px-4 py-3">
+          <button onClick={onClick} className="w-full text-left bg-red-50 border border-red-200 border-l-4 border-l-red-400 rounded-xl px-4 py-3 active:scale-[.98] transition-all">
             <div className="flex items-start gap-2">
               <AlertTriangle size={14} className="text-red-500 mt-0.5 flex-shrink-0" />
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-bold text-red-800 leading-snug">{card.title}</p>
                 {card.description && <p className="text-[12px] text-red-600 mt-1 leading-relaxed line-clamp-2">{card.description}</p>}
               </div>
+              <Pencil size={11} className="text-red-300 flex-shrink-0 mt-0.5" />
             </div>
-          </div>
+          </button>
 
         /* transport — boarding pass style */
         ) : isTransport ? (
