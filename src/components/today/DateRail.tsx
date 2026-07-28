@@ -16,9 +16,6 @@ const DateRail = forwardRef<HTMLDivElement, Props>(({ activeDay, onDayChange }, 
   const prevDay = canPrev ? DAY_META[activeDay - 2] : null
   const nextDay = canNext ? DAY_META[activeDay] : null
 
-  // Progress through the trip
-  const progress = ((activeDay - 1) / 21) * 100
-
   return (
     <div ref={ref} className="bg-white border-b border-black/5 sticky top-0 z-30">
       <div className="px-4 pt-3 pb-2">
@@ -86,20 +83,6 @@ const DateRail = forwardRef<HTMLDivElement, Props>(({ activeDay, onDayChange }, 
           </button>
         </div>
 
-        {/* ── Progress strip ── */}
-        <div className="mt-2.5 flex items-center gap-2">
-          {/* progress bar */}
-          <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-300"
-              style={{ width: `${progress}%`, background: t.mid }}
-            />
-          </div>
-          {/* trip progress label */}
-          <span className="text-[9px] font-bold uppercase tracking-wider flex-shrink-0" style={{ color: t.mid }}>
-            {Math.round(progress)}%
-          </span>
-        </div>
 
         {/* ── Dot strip — tap any day ── */}
         <div className="flex gap-1 mt-2 overflow-x-auto no-scrollbar">
