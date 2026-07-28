@@ -29,6 +29,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null)
   const [carouselIdx, setCarouselIdx] = useState(0)
+  const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null)
   const [photos, setPhotos] = useState(
     (card.photos || []).map(p => ({ ...p, url: p.url || getPhotoUrl(p.storage_path) }))
   )
@@ -96,8 +97,8 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
   const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
-    if (photos.length + files.length > 5) {
-      setUploadError('Max 5 photos per card')
+    if (photos.length + files.length > 10) {
+      setUploadError('Max 10 photos per card')
       return
     }
     setUploadError(null)
@@ -165,7 +166,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
           <div className="flex-1" />
 
           {/* Upload photo button — use label for reliable file picker on iOS/Android */}
-          {photos.length < 5 && !uploading ? (
+          {photos.length < 10 && !uploading ? (
             <label
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold border border-gray-200 bg-gray-50 text-gray-700 active:bg-gray-100 transition-all cursor-pointer"
               htmlFor="card-photo-upload"
@@ -502,8 +503,8 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
               {/* ── Photos section — inline, no tab ── */}
               <Section>
                 <div className="flex items-center justify-between mb-3">
-                  <SectionTitle icon={<Camera size={13} />} label={`Photos ${photos.length > 0 ? `(${photos.length}/5)` : ''}`} color={typeColor} />
-                  {photos.length < 5 && !uploading && (
+                  <SectionTitle icon={<Camera size={13} />} label={`Photos ${photos.length > 0 ? `(${photos.length}/10)` : ''}`} color={typeColor} />
+                  {photos.length < 10 && !uploading && (
                     <label
                       htmlFor="card-photo-upload"
                       className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 bg-white active:bg-gray-50 transition-all cursor-pointer"
@@ -527,7 +528,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                       <p className="text-[13px] font-semibold text-gray-600">
                         {uploading ? 'Uploading…' : 'Add photos from this visit'}
                       </p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">Up to 5 photos per card</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">Up to 10 photos per card</p>
                     </div>
                   </button>
                 ) : (
@@ -577,7 +578,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                             </button>
                           </div>
                         ))}
-                        {photos.length < 5 && (
+                        {photos.length < 10 && (
                           <label
                             htmlFor="card-photo-upload"
                             className="flex-1 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 active:bg-gray-50 transition-all cursor-pointer"
@@ -589,13 +590,13 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                       </div>
                     )}
 
-                    {photos.length === 1 && photos.length < 5 && (
+                    {photos.length === 1 && photos.length < 10 && (
                       <button
                         onPointerDown={e => { e.stopPropagation(); e.preventDefault(); fileRef.current?.click() }}
                         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 active:bg-gray-50 transition-all"
                       >
                         <Camera size={14} />
-                        <span className="text-[12px] font-medium">Add more photos ({5 - photos.length} remaining)</span>
+                        <span className="text-[12px] font-medium">Add more photos ({10 - photos.length} remaining)</span>
                       </button>
                     )}
                   </div>

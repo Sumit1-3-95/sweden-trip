@@ -2,12 +2,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Pencil, Check, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { DayCard, DayData, CountryTheme, COUNTRY_THEMES, DAY_META } from '@/types'
+import { DayCard, DayData, CountryTheme } from '@/types'
 import HeroSection from '@/components/today/HeroSection'
 import DateRail from '@/components/today/DateRail'
 import QuickPills from '@/components/today/QuickPills'
 import TimelineCard from '@/components/cards/TimelineCard'
-import AddCardSheet from '@/components/cards/AddCardSheet'
+
+// Supabase table for day headings
+const DAY_HEADINGS_TABLE = 'day_headings'
 
 interface Props {
   activeDay: number
@@ -15,27 +17,26 @@ interface Props {
   theme: CountryTheme
   dayMeta: DayData
   onOpenCard: (card: DayCard, theme: CountryTheme) => void
+  onAddCard: () => void
 }
 
-export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOpenCard }: Props) {
+export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOpenCard, onAddCard }: Props) {
   const [cards, setCards] = useState<DayCard[]>([])
   const [loading, setLoading] = useState(true)
-  const [showAdd, setShowAdd] = useState(false)
-
-  // Editable day heading
   const [editingHeading, setEditingHeading] = useState(false)
   const [headingValue, setHeadingValue] = useState(dayMeta.title)
   const [headingDraft, setHeadingDraft] = useState(dayMeta.title)
+  const [savingHeading, setSavingHeading] = useState(false)
   const headingInputRef = useRef<HTMLInputElement>(null)
-
   const railRef = useRef<HTMLDivElement>(null)
 
-  // Reset heading when day changes
+  // Load heading from DB on day change
   useEffect(() => {
     setHeadingValue(dayMeta.title)
     setHeadingDraft(dayMeta.title)
     setEditingHeading(false)
-  }, [activeDay, dayMeta.title])
+    loadHeading()
+  }, [activeDay])
 
   useEffect(() => {
     if (editingHeading) headingInputRef.current?.focus()
@@ -50,6 +51,45 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [activeDay])
+
+  async function loadHeading() {
+    try {
+      const { data } = await supabase
+        .from(DAY_HEADINGS_TABLE)
+        .select('heading')
+        .eq('day_number', activeDay)
+        .single()
+      if (data?.heading) {
+        setHeadingValue(data.heading)
+        setHeadingDraft(data.heading)
+      }
+    } catch {
+      // Table may not exist yet — fall back to default title silently
+    }
+  }
+
+  async function saveHeading() {
+    const val = headingDraft.trim()
+    if (!val) return cancelHeading()
+    setSavingHeading(true)
+    try {
+      // Upsert into day_headings table
+      await supabase
+        .from(DAY_HEADINGS_TABLE)
+        .upsert({ day_number: activeDay, heading: val }, { onConflict: 'day_number' })
+      setHeadingValue(val)
+    } catch {
+      // If table doesn't exist, just update locally
+      setHeadingValue(val)
+    }
+    setSavingHeading(false)
+    setEditingHeading(false)
+  }
+
+  function cancelHeading() {
+    setHeadingDraft(headingValue)
+    setEditingHeading(false)
+  }
 
   async function fetchCards() {
     setLoading(true)
@@ -70,23 +110,17 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
     }, 50)
   }
 
-  function saveHeading() {
-    if (headingDraft.trim()) setHeadingValue(headingDraft.trim())
-    setEditingHeading(false)
-  }
-
-  function cancelHeading() {
-    setHeadingDraft(headingValue)
-    setEditingHeading(false)
-  }
-
   return (
     <div className="pb-36">
-      <HeroSection theme={theme} dayMeta={{ ...dayMeta, title: headingValue }} activeDay={activeDay} />
+      <HeroSection
+        theme={theme}
+        dayMeta={{ ...dayMeta, title: headingValue }}
+        activeDay={activeDay}
+      />
       <DateRail ref={railRef} activeDay={activeDay} onDayChange={handleDayChange} />
       <QuickPills dayMeta={dayMeta} theme={theme} cards={cards} />
 
-      {/* ── Day heading row — editable ── */}
+      {/* Day heading — editable, syncs to DB */}
       <div className="px-4 pt-4 pb-2 flex items-center gap-2">
         {editingHeading ? (
           <>
@@ -101,14 +135,15 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
             />
             <button
               onClick={saveHeading}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white transition-all active:scale-90 flex-shrink-0"
+              disabled={savingHeading}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white flex-shrink-0 active:scale-90 transition-all disabled:opacity-50"
               style={{ background: theme.mid }}
             >
               <Check size={14} />
             </button>
             <button
               onClick={cancelHeading}
-              className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-200 bg-gray-50 text-gray-500 transition-all active:scale-90 flex-shrink-0"
+              className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-200 bg-gray-50 text-gray-500 flex-shrink-0 active:scale-90 transition-all"
             >
               <X size={14} />
             </button>
@@ -121,11 +156,9 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
               </p>
               <p className="text-[14px] font-semibold text-gray-700 mt-0.5 truncate">{headingValue}</p>
             </div>
-            {/* subtle edit button */}
             <button
               onClick={() => { setHeadingDraft(headingValue); setEditingHeading(true) }}
               className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-100 bg-gray-50 text-gray-400 hover:text-gray-600 transition-all active:scale-90 flex-shrink-0"
-              title="Edit day heading"
             >
               <Pencil size={11} />
             </button>
@@ -133,7 +166,7 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
         )}
       </div>
 
-      {/* Timeline */}
+      {/* Timeline cards */}
       <div className="px-4">
         {loading ? (
           <div className="space-y-3 pt-2">
@@ -162,22 +195,18 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
 
       {/* FAB */}
       <button
-        onClick={() => setShowAdd(true)}
-        className="fixed bottom-20 right-4 rounded-2xl flex items-center justify-center shadow-card-lg z-40 transition-all active:scale-90"
-        style={{ background: theme.gradient, width: 52, height: 52 }}
+        onClick={onAddCard}
+        className="fixed rounded-2xl flex items-center justify-center shadow-card-lg z-40 transition-all active:scale-90"
+        style={{
+          background: theme.gradient,
+          width: 52, height: 52,
+          bottom: 'max(80px, calc(env(safe-area-inset-bottom) + 72px))',
+          right: 16,
+        }}
         aria-label="Add card"
       >
         <Plus size={22} className="text-white" strokeWidth={2.5} />
       </button>
-
-      {showAdd && (
-        <AddCardSheet
-          dayNumber={activeDay}
-          theme={theme}
-          onClose={() => setShowAdd(false)}
-          onAdded={fetchCards}
-        />
-      )}
     </div>
   )
 }
