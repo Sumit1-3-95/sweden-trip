@@ -97,7 +97,7 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
       .from('day_cards')
       .select('*, photos:card_photos(*)')
       .eq('day_number', activeDay)
-      .order('sort_order')
+      .order('sort_order', { ascending: true })
     setCards(data || [])
     setLoading(false)
   }

@@ -45,15 +45,24 @@ export default function AddCardPage({ activeDay, theme, onClose, onAdded }: Prop
   async function handleSave() {
     if (!title.trim()) return
     setSaving(true)
+    // Convert HH:MM to minutes since midnight for sort_order
+    let sortOrder = 999
+    let displayTime = timeLabel || null
+    if (timeLabel && timeLabel.includes(':')) {
+      const [h, m] = timeLabel.split(':').map(Number)
+      sortOrder = h * 60 + m
+      // Format as readable time label e.g. "09:30"
+      displayTime = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+    }
     await supabase.from('day_cards').insert({
       day_number: selectedDay,
       type,
       title: title.trim(),
       description: description.trim() || null,
-      time_label: timeLabel.trim() || null,
+      time_label: displayTime,
       tags: [],
       status: 'upcoming',
-      sort_order: 999,
+      sort_order: sortOrder,
       metadata: {},
     })
     setSaving(false)
@@ -162,16 +171,17 @@ export default function AddCardPage({ activeDay, theme, onClose, onAdded }: Prop
             />
           </div>
 
-          {/* time */}
+          {/* time — native time picker */}
           <div>
             <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5 block">Time</label>
             <input
+              type="time"
               style={{ fontSize: 16 }}
-              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
               value={timeLabel}
               onChange={e => setTimeLabel(e.target.value)}
-              placeholder="e.g. 9am, Morning, 14:25"
             />
+            <p className="text-[10px] text-gray-400 mt-1 ml-1">Cards are ordered by time on each day</p>
           </div>
 
           {/* description */}
