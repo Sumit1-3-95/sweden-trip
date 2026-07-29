@@ -11,10 +11,21 @@ const fraunces = Fraunces({
 })
 
 export const metadata: Metadata = {
-  title: 'Europa 2026 · Family Trip',
+  title: 'Europa 2026 ✈️',
   description: '22 days · 4 countries · 1 family',
   manifest: '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Europa 2026' },
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/icon-192.png', sizes: '192x192' },
+      { url: '/icon-512.png', sizes: '512x512' },
+    ],
+  },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Europa ✈️' },
 }
 
 export const viewport: Viewport = {

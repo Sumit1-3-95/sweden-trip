@@ -4,6 +4,7 @@ import {
   ArrowLeft, Pencil, Check, Camera, Trash2, ExternalLink,
   X, Plus, ChevronLeft, ChevronRight, Clock, Train,
   Users, Lightbulb, Info, MapPin, BookOpen, Image as ImageIcon,
+  FileText, Download,
 } from 'lucide-react'
 import { supabase, uploadPhoto, getPhotoUrl } from '@/lib/supabase'
 import { DayCard, CountryTheme, CardStatus, DAY_META } from '@/types'
