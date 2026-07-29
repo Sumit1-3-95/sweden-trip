@@ -1,14 +1,28 @@
 {
   "name": "Europa Trip 2026",
-  "short_name": "Europa",
-  "description": "22 days · 4 countries · 1 family",
+  "short_name": "Europa \u2708\ufe0f",
+  "description": "22 days \u00b7 4 countries \u00b7 1 family",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B2545",
   "theme_color": "#0B2545",
   "orientation": "portrait",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }

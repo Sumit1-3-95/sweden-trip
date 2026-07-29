@@ -26,6 +26,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
     time_label: card.time_label || '',
     status: card.status,
     day_number: card.day_number,
+    type: card.type,
   })
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -33,7 +34,9 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null)
   const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null)
   const [trivia, setTrivia] = useState<string>('')
-  const [location, setLocation] = useState<string>(card.location || (card.metadata as Record<string,string> | null)?.maps_url || '')
+  // Read location from metadata.maps_url first (most reliable), then card.location column
+  const metaInit = card.metadata as Record<string,string> | null
+  const [location, setLocation] = useState<string>(metaInit?.maps_url || card.location || '')
   const [editingLocation, setEditingLocation] = useState(false)
   const [locationDraft, setLocationDraft] = useState(location)
   const [editingTrivia, setEditingTrivia] = useState(false)
@@ -42,6 +45,9 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
     (card.photos || []).map(p => ({ ...p, url: p.url || getPhotoUrl(p.storage_path) }))
   )
   const fileRef = useRef<HTMLInputElement>(null)
+  const pdfRef = useRef<HTMLInputElement>(null)
+  const [pdfs, setPdfs] = useState<{id: string; name: string; url: string; storage_path: string}[]>([])
+  const [uploadingPdf, setUploadingPdf] = useState(false)
   const meta = card.metadata as Record<string, string> | null
   const isTransport = card.type === 'transport'
   const isStay = card.type === 'stay'
@@ -81,6 +87,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
       time_label: form.time_label,
       status: form.status,
       day_number: form.day_number,
+      type: form.type,
       updated_at: new Date().toISOString(),
     }).eq('id', card.id)
     setSaving(false)
@@ -105,10 +112,9 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
     const val = locationDraft.trim()
     setLocation(val)
     setEditingLocation(false)
-    // Save to metadata.maps_url
+    // Save ONLY to metadata.maps_url — avoids needing a location column in DB
     const currentMeta = (card.metadata as Record<string, string>) || {}
     await supabase.from('day_cards').update({
-      location: val,
       metadata: { ...currentMeta, maps_url: val },
       updated_at: new Date().toISOString(),
     }).eq('id', card.id)
@@ -150,6 +156,30 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
     // switch to photos tab and jump to newest
     setTab('photos')
   }, [card.id, photos.length, onUpdated])
+
+  const handlePdfUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    setUploadingPdf(true)
+    for (const file of files) {
+      try {
+        const path = `pdfs/${card.id}/${Date.now()}-${file.name.replace(/\s+/g, '_')}`
+        const { error } = await supabase.storage.from('trip-photos').upload(path, file, {
+          contentType: 'application/pdf', upsert: false, cacheControl: '3600'
+        })
+        if (error) throw error
+        const { data } = supabase.storage.from('trip-photos').getPublicUrl(path)
+        setPdfs(prev => [...prev, { id: Date.now().toString(), name: file.name, url: data.publicUrl, storage_path: path }])
+      } catch (err) { console.error('PDF upload error:', err) }
+    }
+    setUploadingPdf(false)
+    if (pdfRef.current) pdfRef.current.value = ''
+  }, [card.id])
+
+  async function deletePdf(storagePath: string, pdfId: string) {
+    await supabase.storage.from('trip-photos').remove([storagePath])
+    setPdfs(prev => prev.filter(p => p.id !== pdfId))
+  }
 
   async function deletePhoto(id: string, path: string) {
     await supabase.storage.from('trip-photos').remove([path])
@@ -240,7 +270,8 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
           )}
         </div>
 
-        <input ref={fileRef} id="card-photo-upload" type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
+        <input ref={fileRef} id="card-photo-upload" type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={handleUpload} />
+        <input ref={pdfRef} id="card-pdf-upload" type="file" accept="application/pdf" multiple className="hidden" onChange={handlePdfUpload} />
 
         {/* ── Hero ── */}
         {photos.length > 0 ? (
@@ -336,6 +367,26 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                       <p className="text-[11px] text-amber-600 font-medium mt-1.5">⚠️ Card will move to Day {form.day_number} on save</p>
                     )}
                   </Field>
+                  <Field label="Card type">
+                    <div className="grid grid-cols-5 gap-2">
+                      {([
+                        { value: 'activity', emoji: '🎯', label: 'Activity' },
+                        { value: 'transport', emoji: '✈️', label: 'Transport' },
+                        { value: 'stay', emoji: '🏠', label: 'Stay' },
+                        { value: 'alert', emoji: '⚠️', label: 'Alert' },
+                        { value: 'free', emoji: '📝', label: 'Note' },
+                      ] as const).map(t => (
+                        <button key={t.value} onClick={() => setForm(f => ({ ...f, type: t.value }))}
+                          className="flex flex-col items-center gap-1 py-2.5 rounded-xl border-[1.5px] transition-all"
+                          style={form.type === t.value
+                            ? { background: typeColor, borderColor: typeColor, color: '#fff' }
+                            : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#6b7280' }}>
+                          <span className="text-base">{t.emoji}</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wide">{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
                   <Field label="Status">
                     <div className="flex gap-2">
                       {(['upcoming', 'now', 'done'] as CardStatus[]).map(s => (
@@ -366,13 +417,13 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                           rel="noopener noreferrer"
                           className="flex items-center gap-3 flex-1 no-underline active:opacity-70 transition-opacity"
                         >
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{ background: theme.light }}>
-                            <MapPin size={16} style={{ color: theme.mid }} />
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ background: theme.mid }}>
+                            <MapPin size={18} className="text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">Location</p>
-                            <p className="text-[13px] font-semibold truncate" style={{ color: theme.mid }}>Open in Maps →</p>
+                            <p className="text-[14px] font-bold truncate" style={{ color: theme.mid }}>Open in Maps →</p>
                           </div>
                         </a>
                         <button onClick={() => { setLocationDraft(location || meta?.maps_url || ''); setEditingLocation(true) }}
@@ -404,17 +455,18 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                     </Sec>
                   )}
 
-                  {/* No location yet — subtle add prompt */}
-                  {!location && !meta?.maps_url && !isTransport && (
+                  {/* No location yet — subtle add prompt — shown on ALL card types */}
+                  {!location && !meta?.maps_url && (
                     <Sec>
                       <button onClick={() => { setLocationDraft(''); setEditingLocation(true) }}
                         className="flex items-center gap-2.5 text-left active:opacity-60 transition-opacity w-full">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border border-dashed border-gray-200">
-                          <MapPin size={16} className="text-gray-300" />
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{ background: '#f3f4f6', border: '1.5px dashed #d1d5db' }}>
+                          <MapPin size={16} className="text-gray-400" />
                         </div>
                         <div>
-                          <p className="text-[13px] font-semibold text-gray-400">Add location</p>
-                          <p className="text-[11px] text-gray-300">Paste a Google Maps URL</p>
+                          <p className="text-[13px] font-semibold text-gray-600">Add location</p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">Paste a Google Maps URL to link this card</p>
                         </div>
                       </button>
                       {editingLocation && (
@@ -666,6 +718,60 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                       </div>
                     </Sec>
                   )}
+                  {/* PDF attachments section */}
+                  <Sec>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <FileText size={13} style={{ color: typeColor }} />
+                        <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: typeColor }}>
+                          Documents {pdfs.length > 0 ? `(${pdfs.length})` : ''}
+                        </p>
+                      </div>
+                      <label htmlFor="card-pdf-upload"
+                        className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 bg-white cursor-pointer active:bg-gray-50">
+                        <FileText size={11} />
+                        {uploadingPdf ? 'Uploading…' : 'Add PDF'}
+                      </label>
+                    </div>
+                    {pdfs.length === 0 ? (
+                      <label htmlFor="card-pdf-upload"
+                        className="flex items-center gap-3 py-4 cursor-pointer active:opacity-70 transition-opacity">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{ border: '1.5px dashed #d1d5db', background: '#f9fafb' }}>
+                          <FileText size={16} className="text-gray-400" />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-semibold text-gray-600">Upload ticket or document</p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">PDF files — tickets, confirmations, maps</p>
+                        </div>
+                      </label>
+                    ) : (
+                      <div className="space-y-2">
+                        {pdfs.map(pdf => (
+                          <div key={pdf.id} className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-3 py-3">
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                              style={{ background: typeColor + '18' }}>
+                              <FileText size={16} style={{ color: typeColor }} />
+                            </div>
+                            <p className="flex-1 text-[12px] font-semibold text-gray-700 truncate">{pdf.name}</p>
+                            <a href={pdf.url} target="_blank" rel="noopener noreferrer"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-50 border border-gray-100 active:bg-gray-100 no-underline">
+                              <Download size={13} className="text-gray-500" />
+                            </a>
+                            <button onClick={() => deletePdf(pdf.storage_path, pdf.id)}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 active:bg-red-100">
+                              <X size={13} className="text-red-400" />
+                            </button>
+                          </div>
+                        ))}
+                        <label htmlFor="card-pdf-upload"
+                          className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-gray-200 cursor-pointer active:bg-gray-50 transition-all">
+                          <FileText size={13} className="text-gray-300" />
+                          <span className="text-[11px] font-medium text-gray-400">Add another document</span>
+                        </label>
+                      </div>
+                    )}
+                  </Sec>
                 </>
               )}
             </div>
