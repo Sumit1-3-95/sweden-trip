@@ -62,10 +62,13 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
     return () => { document.body.style.overflow = prev }
   }, [])
 
-  // Load trivia from metadata
+  // Load trivia + PDFs from metadata on mount
   useEffect(() => {
-    const m = card.metadata as Record<string, string> | null
-    setTrivia(m?.trivia || '')
+    const m = card.metadata as Record<string, unknown> | null
+    setTrivia((m?.trivia as string) || '')
+    // Load saved PDFs from metadata
+    const savedPdfs = (m?.pdfs as Array<{id: string; name: string; url: string; storage_path: string}>) || []
+    setPdfs(savedPdfs)
   }, [card.id])
 
   // Escape key
@@ -158,28 +161,53 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
     setTab('photos')
   }, [card.id, photos.length, onUpdated])
 
+  // Save PDF list to card metadata so it persists across sessions
+  async function savePdfsToMetadata(updatedPdfs: Array<{id: string; name: string; url: string; storage_path: string}>) {
+    const currentMeta = (card.metadata as Record<string, unknown>) || {}
+    await supabase.from('day_cards').update({
+      metadata: { ...currentMeta, pdfs: updatedPdfs },
+      updated_at: new Date().toISOString(),
+    }).eq('id', card.id)
+  }
+
   const handlePdfUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
     setUploadingPdf(true)
+    let currentPdfs = [...pdfs]
     for (const file of files) {
       try {
-        const path = `pdfs/${card.id}/${Date.now()}-${file.name.replace(/\s+/g, '_')}`
+        // Sanitise filename
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+        const path = `pdfs/${card.id}/${Date.now()}-${safeName}`
         const { error } = await supabase.storage.from('trip-photos').upload(path, file, {
-          contentType: 'application/pdf', upsert: false, cacheControl: '3600'
+          contentType: 'application/pdf',
+          upsert: false,
+          cacheControl: '0',
         })
         if (error) throw error
         const { data } = supabase.storage.from('trip-photos').getPublicUrl(path)
-        setPdfs(prev => [...prev, { id: Date.now().toString(), name: file.name, url: data.publicUrl, storage_path: path }])
-      } catch (err) { console.error('PDF upload error:', err) }
+        const newPdf = { id: Date.now().toString(), name: file.name, url: data.publicUrl, storage_path: path }
+        currentPdfs = [...currentPdfs, newPdf]
+        setPdfs(currentPdfs)
+      } catch (err) {
+        console.error('PDF upload error:', err)
+      }
     }
+    // Persist updated PDF list to Supabase metadata
+    await savePdfsToMetadata(currentPdfs)
     setUploadingPdf(false)
     if (pdfRef.current) pdfRef.current.value = ''
-  }, [card.id])
+    onUpdated()
+  }, [card.id, pdfs, onUpdated])
 
   async function deletePdf(storagePath: string, pdfId: string) {
     await supabase.storage.from('trip-photos').remove([storagePath])
-    setPdfs(prev => prev.filter(p => p.id !== pdfId))
+    const updated = pdfs.filter(p => p.id !== pdfId)
+    setPdfs(updated)
+    // Persist updated list to Supabase
+    await savePdfsToMetadata(updated)
+    onUpdated()
   }
 
   async function deletePhoto(id: string, path: string) {
