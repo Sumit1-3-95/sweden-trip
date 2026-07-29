@@ -85,13 +85,28 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
 
   async function saveEdit() {
     setSaving(true)
+    // Recalculate sort_order from time_label when saving edits
+    let newSortOrder = card.sort_order
+    const t = form.time_label.trim()
+    if (t && /^\d{1,2}:\d{2}$/.test(t)) {
+      const [h, m] = t.split(':').map(Number)
+      newSortOrder = h * 60 + m
+    } else if (/^~\d{1,2}:\d{2}$/.test(t)) {
+      const clean = t.replace('~', '')
+      const [h, m] = clean.split(':').map(Number)
+      newSortOrder = h * 60 + m
+    }
+    // Zero-pad time label
+    const paddedTime = t && /^\d:\d{2}$/.test(t) ? '0' + t : t
+
     await supabase.from('day_cards').update({
       title: form.title,
       description: form.description,
-      time_label: form.time_label,
+      time_label: paddedTime || form.time_label,
       status: form.status,
       day_number: form.day_number,
       type: form.type,
+      sort_order: newSortOrder,
       updated_at: new Date().toISOString(),
     }).eq('id', card.id)
     setSaving(false)
