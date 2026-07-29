@@ -72,45 +72,72 @@ export default function TimelineCard({ card, isLast, theme, onClick }: Props) {
             </div>
           </button>
 
-        /* transport — boarding pass style */
+        /* transport — ticket style */
         ) : isTransport ? (
-          <button onClick={onClick} className="w-full text-left bg-white rounded-xl border border-black/5 shadow-card overflow-hidden active:scale-[.98] transition-all">
-            <div className="px-4 pt-3.5 pb-1 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: theme.light }}>
+          <button onClick={onClick}
+            className="w-full text-left overflow-hidden active:scale-[.98] transition-all relative"
+            style={{
+              background: 'linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%)',
+              border: '1px solid #e0e0e0',
+              borderRadius: 16,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+            }}
+          >
+            {/* ticket top strip — coloured by theme */}
+            <div className="px-4 pt-3 pb-2.5 flex items-center gap-2.5"
+              style={{ borderBottom: '1px dashed #ddd' }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: theme.gradient }}>
                 {meta?.num?.match(/LH|SK|D8|FR/) || meta?.type === 'flight'
-                  ? <Plane size={15} style={{ color: theme.mid }} />
-                  : <Train size={15} style={{ color: theme.mid }} />}
+                  ? <Plane size={14} className="text-white" />
+                  : <Train size={14} className="text-white" />}
               </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{meta?.op || 'Transport'}</p>
-                <p className="text-[13px] font-bold text-gray-900">{meta?.num || card.title}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{meta?.op || 'Transport'}</p>
+                <p className="text-[13px] font-bold text-gray-800 truncate">{meta?.num || card.title}</p>
               </div>
               {meta?.ref && (
-                <span className="ml-auto text-[10px] font-mono font-bold px-2 py-0.5 rounded-md" style={{ background: theme.light, color: theme.dark }}>
+                <span className="text-[10px] font-mono font-bold px-2 py-1 rounded-lg bg-white border border-gray-200 text-gray-500 flex-shrink-0">
                   {meta.ref}
                 </span>
               )}
             </div>
-            {/* route */}
+
+            {/* ticket notch effect — left and right circles */}
+            <div className="relative">
+              <div className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-100"
+                style={{ border: '1px solid #e0e0e0' }} />
+              <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-100"
+                style={{ border: '1px solid #e0e0e0' }} />
+            </div>
+
+            {/* route section */}
             {(meta?.dep || meta?.arr) && (
-              <div className="flex items-center px-4 pb-3 gap-2">
+              <div className="flex items-center px-4 py-3 gap-2">
                 <div>
-                  <p className="text-[20px] font-bold text-gray-900 leading-none tabular-nums">{meta.dep}</p>
-                  <p className="text-[11px] text-gray-400 mt-0.5 max-w-[90px] truncate">{meta.from}</p>
+                  <p className="text-[22px] font-bold text-gray-900 leading-none tabular-nums">{meta.dep}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5 max-w-[90px] truncate font-medium">{meta.from}</p>
                 </div>
-                <div className="flex-1 flex items-center gap-1.5 px-2">
-                  <div className="flex-1 border-t border-dashed border-gray-200" />
-                  <span className="text-gray-300 text-xs">›</span>
+                <div className="flex-1 flex flex-col items-center gap-1 px-2">
+                  <div className="w-full border-t border-dashed border-gray-300" />
+                  {meta?.num?.match(/LH|SK|D8|FR/) || meta?.type === 'flight'
+                    ? <Plane size={11} className="text-gray-300" />
+                    : <Train size={11} className="text-gray-300" />}
                 </div>
                 <div className="text-right">
-                  <p className="text-[20px] font-bold text-gray-900 leading-none tabular-nums">{meta.arr}</p>
-                  <p className="text-[11px] text-gray-400 mt-0.5 max-w-[90px] truncate text-right">{meta.to}</p>
+                  <p className="text-[22px] font-bold text-gray-900 leading-none tabular-nums">{meta.arr}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5 max-w-[90px] truncate text-right font-medium">{meta.to}</p>
                 </div>
               </div>
             )}
-            {meta?.carriage && (
-              <div className="border-t border-gray-50 px-4 py-2">
-                <span className="text-[11px] text-gray-400 font-medium">🪑 {meta.carriage} · All 5 passengers · Confirmed</span>
+
+            {/* ticket footer */}
+            {(meta?.carriage || meta?.passengers) && (
+              <div className="px-4 py-2 flex items-center gap-2"
+                style={{ borderTop: '1px dashed #ddd', background: 'rgba(0,0,0,0.02)' }}>
+                {meta.carriage && <span className="text-[10px] text-gray-400 font-semibold">🪑 {meta.carriage}</span>}
+                <span className="text-gray-200">·</span>
+                <span className="text-[10px] text-emerald-600 font-bold">✓ Confirmed</span>
               </div>
             )}
           </button>
