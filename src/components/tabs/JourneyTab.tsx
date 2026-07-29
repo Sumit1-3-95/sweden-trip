@@ -15,13 +15,29 @@ export default function JourneyTab({ activeDay, setActiveDay, onOpenCard }: Prop
   const [openDays, setOpenDays] = useState<Set<number>>(new Set())
   const stripRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { fetchAll() }, [])
+  useEffect(() => {
+    fetchAll()
+
+    // Realtime subscription — refetch whenever any card changes
+    const channel = supabase
+      .channel('journey_cards')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'day_cards' }, () => fetchAll())
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   async function fetchAll() {
-    const { data } = await supabase.from('day_cards').select('*').order('sort_order')
+    const { data } = await supabase
+      .from('day_cards')
+      .select('*')
+      .order('sort_order', { ascending: true })
     if (!data) return
     const grouped: Record<number, DayCard[]> = {}
-    data.forEach(c => { if (!grouped[c.day_number]) grouped[c.day_number] = []; grouped[c.day_number].push(c) })
+    data.forEach(c => {
+      if (!grouped[c.day_number]) grouped[c.day_number] = []
+      grouped[c.day_number].push(c)
+    })
     setCardsByDay(grouped)
   }
 

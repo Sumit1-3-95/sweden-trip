@@ -75,26 +75,37 @@ export default function HeroSection({ theme, dayMeta, activeDay }: Props) {
 
   // Load hero image from Supabase on mount and day change
   useEffect(() => {
-    setHeroUrl(null) // clear previous day's image while loading
+    setHeroUrl(null) // clear while loading
     loadHeroImage()
+
+    // Subscribe to storage changes so all devices update in real time
+    // We poll every 30s as Supabase Storage doesn't have realtime events
+    const interval = setInterval(() => {
+      loadHeroImage()
+    }, 30000)
+
+    return () => clearInterval(interval)
   }, [activeDay])
 
   async function loadHeroImage() {
     try {
-      // Get public URL — if file doesn't exist Supabase still returns a URL,
-      // so we do a lightweight HEAD check via cache-busting
       const { data } = supabase.storage
         .from(BUCKET)
         .getPublicUrl(heroPath(activeDay))
 
-      // Verify the image actually exists by attempting to load it
-      // We use a small fetch with HEAD to avoid downloading the full image
-      const res = await fetch(data.publicUrl, { method: 'HEAD' })
-      if (res.ok) {
-        setHeroUrl(data.publicUrl + '?t=' + Date.now()) // cache-bust
-      }
+      // Use a hidden Image object to test if the URL actually resolves
+      // This avoids CORS issues with HEAD requests on Supabase public URLs
+      const url = data.publicUrl + '?t=' + Date.now() // cache-bust to bypass CDN
+      await new Promise<void>((resolve, reject) => {
+        const img = new window.Image()
+        img.onload = () => resolve()
+        img.onerror = () => reject()
+        img.src = url
+      })
+      setHeroUrl(url)
     } catch {
-      // No image for this day — use default gradient
+      // File doesn't exist for this day — show default gradient
+      setHeroUrl(null)
     }
   }
 
@@ -113,7 +124,7 @@ export default function HeroSection({ theme, dayMeta, activeDay }: Props) {
         .upload(heroPath(activeDay), compressed, {
           contentType: 'image/jpeg',
           upsert: true,
-          cacheControl: '3600',
+          cacheControl: '0', // no cache — ensures fresh URL always loads
         })
 
       if (error) throw error
