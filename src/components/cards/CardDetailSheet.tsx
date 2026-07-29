@@ -33,6 +33,9 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null)
   const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null)
   const [trivia, setTrivia] = useState<string>('')
+  const [location, setLocation] = useState<string>(card.location || (card.metadata as Record<string,string> | null)?.maps_url || '')
+  const [editingLocation, setEditingLocation] = useState(false)
+  const [locationDraft, setLocationDraft] = useState(location)
   const [editingTrivia, setEditingTrivia] = useState(false)
   const [savingTrivia, setSavingTrivia] = useState(false)
   const [photos, setPhotos] = useState(
@@ -95,6 +98,20 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
     }).eq('id', card.id)
     setSavingTrivia(false)
     setEditingTrivia(false)
+    onUpdated()
+  }
+
+  async function saveLocation() {
+    const val = locationDraft.trim()
+    setLocation(val)
+    setEditingLocation(false)
+    // Save to metadata.maps_url
+    const currentMeta = (card.metadata as Record<string, string>) || {}
+    await supabase.from('day_cards').update({
+      location: val,
+      metadata: { ...currentMeta, maps_url: val },
+      updated_at: new Date().toISOString(),
+    }).eq('id', card.id)
     onUpdated()
   }
 
@@ -339,6 +356,91 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                 </div>
               ) : (
                 <>
+                  {/* Location — tappable maps link */}
+                  {(location || meta?.maps_url) && (
+                    <Sec>
+                      <div className="flex items-center justify-between gap-3">
+                        <a
+                          href={location || meta?.maps_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 flex-1 no-underline active:opacity-70 transition-opacity"
+                        >
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ background: theme.light }}>
+                            <MapPin size={16} style={{ color: theme.mid }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">Location</p>
+                            <p className="text-[13px] font-semibold truncate" style={{ color: theme.mid }}>Open in Maps →</p>
+                          </div>
+                        </a>
+                        <button onClick={() => { setLocationDraft(location || meta?.maps_url || ''); setEditingLocation(true) }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-100 bg-gray-50 text-gray-400 active:scale-90 transition-all flex-shrink-0">
+                          <Pencil size={11} />
+                        </button>
+                      </div>
+                      {editingLocation && (
+                        <div className="mt-3 flex gap-2">
+                          <input
+                            style={{ fontSize: 16 }}
+                            className="input flex-1 text-[13px]"
+                            value={locationDraft}
+                            onChange={e => setLocationDraft(e.target.value)}
+                            placeholder="Paste a Google Maps or any maps URL"
+                            autoFocus
+                          />
+                          <button onClick={saveLocation}
+                            className="px-3 py-2 rounded-xl text-[12px] font-semibold text-white flex-shrink-0"
+                            style={{ background: theme.mid }}>
+                            Save
+                          </button>
+                          <button onClick={() => setEditingLocation(false)}
+                            className="px-3 py-2 rounded-xl text-[12px] font-semibold text-gray-500 border border-gray-200 bg-gray-50 flex-shrink-0">
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                    </Sec>
+                  )}
+
+                  {/* No location yet — subtle add prompt */}
+                  {!location && !meta?.maps_url && !isTransport && (
+                    <Sec>
+                      <button onClick={() => { setLocationDraft(''); setEditingLocation(true) }}
+                        className="flex items-center gap-2.5 text-left active:opacity-60 transition-opacity w-full">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border border-dashed border-gray-200">
+                          <MapPin size={16} className="text-gray-300" />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-semibold text-gray-400">Add location</p>
+                          <p className="text-[11px] text-gray-300">Paste a Google Maps URL</p>
+                        </div>
+                      </button>
+                      {editingLocation && (
+                        <div className="mt-3 flex gap-2">
+                          <input
+                            style={{ fontSize: 16 }}
+                            className="input flex-1 text-[13px]"
+                            value={locationDraft}
+                            onChange={e => setLocationDraft(e.target.value)}
+                            placeholder="https://maps.app.goo.gl/..."
+                            autoFocus
+                          />
+                          <button onClick={saveLocation}
+                            className="px-3 py-2 rounded-xl text-[12px] font-semibold text-white flex-shrink-0"
+                            style={{ background: theme.mid }}>
+                            Save
+                          </button>
+                          <button onClick={() => setEditingLocation(false)}
+                            className="px-3 py-2 rounded-xl text-[12px] font-semibold text-gray-500 border border-gray-200 bg-gray-50 flex-shrink-0">
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                    </Sec>
+                  )}
+
                   {/* Quick facts strip */}
                   {(meta?.duration || meta?.nearest_station || meta?.cost) && (
                     <div className="flex bg-white border-b border-gray-100 divide-x divide-gray-100">
