@@ -166,8 +166,11 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
         )}
       </div>
 
-      {/* Timeline cards */}
-      <div className="px-4">
+      {/* Timeline cards — clean aesthetic background */}
+      <div className="px-4 py-3 mx-0 relative">
+        {/* Subtle left accent line in theme colour */}
+        <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full opacity-20"
+          style={{ background: `linear-gradient(to bottom, transparent, ${theme.mid}, transparent)` }} />
         {loading ? (
           <div className="space-y-3 pt-2">
             {[1, 2, 3].map(i => (

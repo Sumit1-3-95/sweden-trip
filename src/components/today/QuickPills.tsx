@@ -1,5 +1,5 @@
 'use client'
-import { Cloud, AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { DayCard, DayData, CountryTheme } from '@/types'
 
 interface Props { dayMeta: DayData; theme: CountryTheme; cards: DayCard[] }
@@ -19,21 +19,14 @@ export default function QuickPills({ dayMeta, theme, cards }: Props) {
   const coords = CITY_COORDS[cityKey]
   const weatherUrl = `https://wttr.in/${coords.lat},${coords.lon}?format=3`
 
-  return (
-    <div className="flex gap-2 px-4 py-3 overflow-x-auto no-scrollbar">
-      {/* Weather — placeholder until API integrated */}
-      <Pill>
-        <Cloud size={12} className="text-sky-500 flex-shrink-0" />
-        <span className="text-gray-600 text-xs font-medium">Weather · {dayMeta.city}</span>
-      </Pill>
+  if (alerts === 0) return null
 
-      {/* Alert pill — only shown if there are alerts */}
-      {alerts > 0 && (
-        <Pill alert>
-          <AlertTriangle size={12} className="flex-shrink-0" />
-          <span className="text-xs font-medium">{alerts} alert{alerts > 1 ? 's' : ''}</span>
-        </Pill>
-      )}
+  return (
+    <div className="flex gap-2 px-4 pt-2 pb-0 overflow-x-auto no-scrollbar">
+      <Pill alert>
+        <AlertTriangle size={12} className="flex-shrink-0" />
+        <span className="text-xs font-medium">{alerts} alert{alerts > 1 ? 's' : ''} today</span>
+      </Pill>
     </div>
   )
 }

@@ -7,7 +7,7 @@ import {
   FileText, Download,
 } from 'lucide-react'
 import { supabase, uploadPhoto, getPhotoUrl } from '@/lib/supabase'
-import { DayCard, CountryTheme, CardStatus, DAY_META } from '@/types'
+import { DayCard, CountryTheme, CardStatus, CardType, DAY_META } from '@/types'
 
 interface Props {
   card: DayCard
@@ -21,19 +21,28 @@ type Tab = 'itinerary' | 'photos' | 'trivia'
 export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Props) {
   const [tab, setTab] = useState<Tab>('itinerary')
   const [editing, setEditing] = useState(false)
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    title: string
+    description: string
+    time_label: string
+    status: CardStatus
+    day_number: number
+    type: CardType
+  }>({
     title: card.title,
     description: card.description || '',
     time_label: card.time_label || '',
     status: card.status,
     day_number: card.day_number,
-    type: card.type,
+    type: card.type as CardType,
   })
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null)
   const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null)
+  const touchStartX = useRef<number>(0)
+  const touchEndX = useRef<number>(0)
   const [trivia, setTrivia] = useState<string>('')
   // Read location from metadata.maps_url first (most reliable), then card.location column
   const metaInit = card.metadata as Record<string,string> | null
@@ -319,11 +328,23 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
 
         {/* ── Hero ── */}
         {photos.length > 0 ? (
-          <div className="relative flex-shrink-0" style={{ height: 220 }}>
+          <div
+            className="relative flex-shrink-0 overflow-hidden"
+            style={{ height: 220 }}
+            onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
+            onTouchEnd={e => {
+              touchEndX.current = e.changedTouches[0].clientX
+              const diff = touchStartX.current - touchEndX.current
+              if (Math.abs(diff) > 40) {
+                if (diff > 0) setCarouselIdx(i => (i + 1) % photos.length)
+                else setCarouselIdx(i => (i - 1 + photos.length) % photos.length)
+              }
+            }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={coverPhotoId ? (photos.find(p => p.id === coverPhotoId)?.url || photos[0].url) : photos[0].url}
-              alt="" className="w-full h-full object-cover"
+              src={photos[carouselIdx]?.url || photos[0].url}
+              alt="" className="w-full h-full object-cover transition-opacity duration-300"
             />
             <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }} />
             {/* text on hero */}
@@ -414,12 +435,12 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                   <Field label="Card type">
                     <div className="grid grid-cols-5 gap-2">
                       {([
-                        { value: 'activity', emoji: '🎯', label: 'Activity' },
-                        { value: 'transport', emoji: '✈️', label: 'Transport' },
-                        { value: 'stay', emoji: '🏠', label: 'Stay' },
-                        { value: 'alert', emoji: '⚠️', label: 'Alert' },
-                        { value: 'free', emoji: '📝', label: 'Note' },
-                      ] as const).map(t => (
+                        { value: 'activity' as CardType, emoji: '🎯', label: 'Activity' },
+                        { value: 'transport' as CardType, emoji: '✈️', label: 'Transport' },
+                        { value: 'stay' as CardType, emoji: '🏠', label: 'Stay' },
+                        { value: 'alert' as CardType, emoji: '⚠️', label: 'Alert' },
+                        { value: 'free' as CardType, emoji: '📝', label: 'Note' },
+                      ]).map(t => (
                         <button key={t.value} onClick={() => setForm(f => ({ ...f, type: t.value }))}
                           className="flex flex-col items-center gap-1 py-2.5 rounded-xl border-[1.5px] transition-all"
                           style={form.type === t.value

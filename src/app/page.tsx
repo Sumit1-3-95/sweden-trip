@@ -17,7 +17,7 @@ const TABS = [
   { id: 'today',   label: 'Today',    Icon: Home },
   { id: 'journey', label: 'Journey',  Icon: Calendar },
   { id: 'photos',  label: 'Memories', Icon: Image },
-  { id: 'lists',   label: 'Lists',    Icon: CheckSquare },
+  // Lists tab hidden — { id: 'lists', label: 'Lists', Icon: CheckSquare },
 ]
 
 function getCurrentDay(): number {
