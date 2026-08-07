@@ -166,34 +166,59 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
         )}
       </div>
 
-      {/* Timeline cards — clean aesthetic background */}
-      <div className="px-4 py-3 mx-0 relative">
-        {/* Subtle left accent line in theme colour */}
-        <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full opacity-20"
-          style={{ background: `linear-gradient(to bottom, transparent, ${theme.mid}, transparent)` }} />
-        {loading ? (
-          <div className="space-y-3 pt-2">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-24 bg-white rounded-xl animate-pulse border border-black/5" />
-            ))}
-          </div>
-        ) : cards.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="text-4xl mb-3">📋</div>
-            <p className="text-sm font-medium text-gray-500">No cards yet for this day</p>
-            <p className="text-xs text-gray-400 mt-1">Tap + to add one</p>
-          </div>
-        ) : (
-          cards.map((card, idx) => (
-            <TimelineCard
-              key={card.id}
-              card={card}
-              isLast={idx === cards.length - 1}
-              theme={theme}
-              onClick={() => onOpenCard(card, theme)}
-            />
-          ))
-        )}
+      {/* Timeline cards — aesthetic background */}
+      <div className="relative mx-3 rounded-3xl overflow-hidden" style={{ minHeight: 200 }}>
+
+        {/* Background layer — country-themed soft gradient with texture */}
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Base soft gradient */}
+          <div className="absolute inset-0" style={{
+            background: `linear-gradient(160deg, ${theme.light} 0%, #f8f9fa 60%, ${theme.light}88 100%)`
+          }} />
+          {/* Diagonal line texture — very subtle */}
+          <div className="absolute inset-0 opacity-[0.06]" style={{
+            backgroundImage: `repeating-linear-gradient(
+              45deg,
+              ${theme.mid} 0px, ${theme.mid} 1px,
+              transparent 1px, transparent 18px
+            )`
+          }} />
+          {/* Soft radial glow top-right */}
+          <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full opacity-20" style={{
+            background: `radial-gradient(circle, ${theme.mid} 0%, transparent 70%)`
+          }} />
+          {/* Soft radial glow bottom-left */}
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full opacity-10" style={{
+            background: `radial-gradient(circle, ${theme.mid} 0%, transparent 70%)`
+          }} />
+        </div>
+
+        {/* Cards on top of background */}
+        <div className="relative px-3 py-3">
+          {loading ? (
+            <div className="space-y-3 pt-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-24 bg-white rounded-xl animate-pulse border border-black/5" />
+              ))}
+            </div>
+          ) : cards.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="text-4xl mb-3">📋</div>
+              <p className="text-sm font-medium text-gray-500">No cards yet for this day</p>
+              <p className="text-xs text-gray-400 mt-1">Tap + to add one</p>
+            </div>
+          ) : (
+            cards.map((card, idx) => (
+              <TimelineCard
+                key={card.id}
+                card={card}
+                isLast={idx === cards.length - 1}
+                theme={theme}
+                onClick={() => onOpenCard(card, theme)}
+              />
+            ))
+          )}
+        </div>
       </div>
 
       {/* FAB */}
