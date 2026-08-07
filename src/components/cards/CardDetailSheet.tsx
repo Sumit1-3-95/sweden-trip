@@ -40,6 +40,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null)
+  const [carouselIdx, setCarouselIdx] = useState(0)
   const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null)
   const touchStartX = useRef<number>(0)
   const touchEndX = useRef<number>(0)
