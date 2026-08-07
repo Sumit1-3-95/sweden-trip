@@ -154,7 +154,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
   const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
-    if (photos.length + files.length > 10) { setUploadError('Max 10 photos per card'); return }
+    if (photos.length + files.length > 20) { setUploadError('Max 20 photos per card'); return }
     setUploadError(null)
     setUploading(true)
     for (const file of files) {
@@ -290,14 +290,14 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
             <p className="text-[13px] font-bold text-gray-900 truncate text-center">{card.title}</p>
           </div>
           {/* Photo upload */}
-          {photos.length < 10 ? (
+          {photos.length < 20 ? (
             <label htmlFor="card-photo-upload"
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border border-gray-200 bg-gray-50 text-gray-600 cursor-pointer active:bg-gray-100 flex-shrink-0">
               <Camera size={13} style={{ color: typeColor }} />
               {uploading ? '…' : 'Photo'}
             </label>
           ) : (
-            <span className="text-[11px] text-gray-400 flex-shrink-0">10/10</span>
+            <span className="text-[11px] text-gray-400 flex-shrink-0">20/20</span>
           )}
           {/* Edit / Save */}
           {editing ? (
@@ -878,13 +878,13 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                     ))}
 
                     {/* Add more slot */}
-                    {photos.length < 10 && (
+                    {photos.length < 20 && (
                       <label
                         htmlFor="card-photo-upload"
                         className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 cursor-pointer active:bg-gray-50 transition-all"
                         style={{ height: 130, gridColumn: photos.length === 0 || photos.length % 2 === 0 ? 'span 2' : 'span 1' }}>
                         <Plus size={20} className="text-gray-300" />
-                        <span className="text-[11px] text-gray-400 font-medium">{uploading ? 'Uploading…' : `Add photo (${10 - photos.length} left)`}</span>
+                        <span className="text-[11px] text-gray-400 font-medium">{uploading ? 'Uploading…' : `Add photo (${20 - photos.length} left)`}</span>
                       </label>
                     )}
                   </div>
@@ -921,7 +921,7 @@ export default function CardDetailSheet({ card, theme, onClose, onUpdated }: Pro
                     </div>
                   )}
 
-                  <p className="text-center text-[11px] text-gray-400 pb-4">{photos.length}/10 photos · Tap to view full size</p>
+                  <p className="text-center text-[11px] text-gray-400 pb-4">{photos.length}/20 photos · Tap to view full size</p>
                 </div>
               )}
             </div>
