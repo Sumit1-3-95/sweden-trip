@@ -169,27 +169,24 @@ export default function TodayTab({ activeDay, setActiveDay, theme, dayMeta, onOp
       {/* Timeline cards — aesthetic background */}
       <div className="relative mx-3 rounded-3xl overflow-hidden" style={{ minHeight: 200 }}>
 
-        {/* Background layer — country-themed soft gradient with texture */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Base soft gradient */}
+        {/* Background — cool tones, calm and aesthetic */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl">
+          {/* Base: cool blue-grey wash */}
           <div className="absolute inset-0" style={{
-            background: `linear-gradient(160deg, ${theme.light} 0%, #f8f9fa 60%, ${theme.light}88 100%)`
+            background: 'linear-gradient(160deg, #F0F4FF 0%, #F8FAFF 40%, #EEF2FF 100%)'
           }} />
-          {/* Diagonal line texture — very subtle */}
-          <div className="absolute inset-0 opacity-[0.06]" style={{
-            backgroundImage: `repeating-linear-gradient(
-              45deg,
-              ${theme.mid} 0px, ${theme.mid} 1px,
-              transparent 1px, transparent 18px
-            )`
+          {/* Subtle grid lines */}
+          <div className="absolute inset-0 opacity-[0.04]" style={{
+            backgroundImage: 'linear-gradient(#6366F1 1px, transparent 1px), linear-gradient(90deg, #6366F1 1px, transparent 1px)',
+            backgroundSize: '32px 32px'
           }} />
-          {/* Soft radial glow top-right */}
-          <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full opacity-20" style={{
-            background: `radial-gradient(circle, ${theme.mid} 0%, transparent 70%)`
+          {/* Top-right soft indigo glow */}
+          <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-15" style={{
+            background: 'radial-gradient(circle, #818CF8 0%, transparent 65%)'
           }} />
-          {/* Soft radial glow bottom-left */}
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full opacity-10" style={{
-            background: `radial-gradient(circle, ${theme.mid} 0%, transparent 70%)`
+          {/* Bottom-left soft blue glow */}
+          <div className="absolute -bottom-16 -left-16 w-52 h-52 rounded-full opacity-10" style={{
+            background: 'radial-gradient(circle, #60A5FA 0%, transparent 65%)'
           }} />
         </div>
 
